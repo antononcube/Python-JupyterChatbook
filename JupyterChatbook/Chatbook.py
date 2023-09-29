@@ -117,7 +117,6 @@ class Chatbook(Magics):
 
         args = parse_argstring(self.chat_meta, line)
         args = vars(args)
-        print(args)
         chatID = args["chat_id"]
         new_cell = ""
         doit = True
