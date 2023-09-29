@@ -5,8 +5,7 @@ from LLMPrompts import llm_prompt
 
 
 def unquote(v):
-    if ((v.startswith('"') and v.endswith('"')) or
-            (v.startswith("'") and v.endswith("'"))):
+    if isinstance(v, str) and ((v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'"))):
         return v[1:-1]
     return v
 
@@ -14,10 +13,6 @@ def unquote(v):
 @magics_class
 class Chatbook(Magics):
     chatObjects = {"NONE": llm_chat('', llm_evaluator='ChatGPT')}
-
-    @line_magic
-    def abra(self, line):
-        return line
 
     @magic_arguments()
     @argument('-i', '--chat_id', default="NONE", help="Identifier (name) of the chat object")
@@ -35,20 +30,19 @@ class Chatbook(Magics):
 
         args = parse_argstring(self.chat, line)
         args = vars(args)
-        print(args)
-        chatID = args.get("id", "NONE")
-        chatObj = self.chatObjects["NONE"]
+        args = {k: unquote(v) for k, v in args.items()}
+        chatID = args.get("chat_id", "NONE")
         if chatID in self.chatObjects:
             chatObj = self.chatObjects[chatID]
         else:
             args2 = {k: v for k, v in args.items() if k not in ["chat_id", "conf", "prompt"]}
-            if "prompt" in args:
-                args2 = {**args2, **{"prompts": [args.get("prompt"), ]}}
-
-            chatObj = llm_chat(chatID, llm_evaluator=llm_evaluator(args.get("conf", "ChatGPT"), **args2))
+            prompt = args.get("prompt", "")
+            chatObj = llm_chat(prompt, llm_evaluator=llm_evaluator(args.get("conf", "ChatGPT"), **args2))
+            self.chatObjects[chatID] = chatObj
 
         # Evaluate the chat message
-        new_cell = f"print('{chatObj.eval(cell.strip())}')"
+        res = chatObj.eval(cell.strip())
+        new_cell = 'print("{}".format("""' + res + '"""))'
 
         # Result
         self.shell.run_cell(new_cell)
@@ -91,13 +85,13 @@ class Chatbook(Magics):
                     new_cell = f"The command 'prompt' applies to chat objects only."
                 else:
                     new_cell = self.chatObjects[chatID].prompt()
-            elif cmd == "print":
+            elif cmd in ["print", "say"]:
                 if chatID == "all":
-                    new_cell = f"The command 'print' applies to chat objects only."
+                    new_cell = str(self.chatObjects)
                 else:
                     self.chatObjects[chatID].print()
                     doit = False
 
                     # Place result
         if doit:
-            self.shell.run_cell(f"print(\"{new_cell}\")")
+            self.shell.run_cell('print("{}".format("""' + new_cell + '"""))')
