@@ -1,13 +1,16 @@
+from typing import Union
+
 from IPython.core.magic import (Magics, magics_class, line_magic, cell_magic)
 from IPython.core.magic_arguments import (argument, magic_arguments, parse_argstring)
 from LLMFunctionObjects import llm_evaluator, llm_chat
 from LLMPrompts import llm_prompt_expand
 import openai
+import os
 import IPython
 from base64 import b64decode
 
 
-def unquote(v):
+def _unquote(v):
     if isinstance(v, str) and ((v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'"))):
         return v[1:-1]
     return v
@@ -18,6 +21,107 @@ class Chatbook(Magics):
     chatObjects = {"NONE": llm_chat('', llm_evaluator='ChatGPT')}
     dallESizes = {"small": "256x256", "medium": "512x512", "large": "1024x1024",
                   "256": "256x256", "512": "512x512", "104": "1024x1024"}
+
+    @magic_arguments()
+    @argument('-m', '--model', type=str, default="gpt-3.5-turbo-0613", help='Model')
+    @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with)')
+    @argument('--top_p', default=None, help='Top probability mass')
+    @argument('-n', type=int, default=1, help="Number of generated images")
+    @argument('--stop', default=None, help="Number of generated images")
+    @argument('--max_tokens', default=None, help='Max number of tokens')
+    @argument('-f', '--response_format', type=str, default="values",
+              help='Format, one of "asis", "values", or "dict"')
+    @argument('--api_key', default=None, help="API key to access the LLM service")
+    @cell_magic
+    def chatgpt(self, line, cell):
+        """
+        OpenAI ChatGPT magic for image generation by prompt.
+        :return: Image.
+        """
+        args = parse_argstring(self.chatgpt, line)
+        args = vars(args)
+        args = {k: _unquote(v) for k, v in args.items()}
+
+        # Stop tokens
+        stopTokens = args.get("stop")
+        if stopTokens is None:
+            stopTokens = []
+        elif isinstance(stopTokens, str):
+            if stopTokens.startswith("[") and stopTokens.endswith("]"):
+                stopTokens = stopTokens[1:(len(stopTokens)-1)].split(",")
+                stopTokens = [_unquote(x) for x in stopTokens]
+            else:
+                stopTokens = [stopTokens, ]
+        else:
+            print(f"Cannot process the given stop tokens {stopTokens}.")
+
+        # Max tokens
+        maxTokens = args["max_tokens"]
+        if isinstance(maxTokens, str):
+            if maxTokens.lower() in ["none", "null"]:
+                maxTokens = None
+            elif isinstance(maxTokens, str):
+                maxTokens = int(maxTokens)
+
+        # Response format
+        resFormat = args.get("response_format", "values")
+        if resFormat not in ["asis", "values", "dict"]:
+            print(
+                f'The response_format argument expects a value that is one of: "asis", "values", "dict". Using "dict".')
+            resFormat = "json"
+
+        # API key
+        if isinstance(args.get("api_key"), str):
+            openai.api_key = args["api_key"]
+        else:
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+
+        # Call to OpenAI
+        # res = openai.ChatCompletion.create(
+        #     model=args["model"],
+        #     messages=[{"role": "user", "content": cell}]
+        # )
+
+        if isinstance(args["top_p"], float):
+            res = openai.ChatCompletion.create(
+                model=args["model"],
+                messages=[{"role": "user", "content": cell}],
+                n=args["n"],
+                top_p=args["top_p"],
+                max_tokens=maxTokens,
+                stop=stopTokens
+            )
+        else:
+            res = openai.ChatCompletion.create(
+                model=args["model"],
+                messages=[{"role": "user", "content": cell}],
+                n=args["n"],
+                temperature=args["temperature"],
+                max_tokens=maxTokens,
+                stop=stopTokens
+            )
+
+        # res = openai.ChatCompletion.create(
+        #     model=args["model"],
+        #     messages=[{"role": "user", "content": cell}],
+        #     n=args["n"],
+        #     stop=stopTokens,
+        #     top_p=args["top_p"],
+        #     max_tokens=args["max_tokens"]
+        # )
+
+        # Post process results
+        if resFormat == "asis":
+            new_cell = repr(res)
+        elif resFormat in ["values", "value"]:
+            new_cell = "\n".join([x["message"]["content"] for x in res.choices])
+        else:
+            new_cell = repr(res)
+
+        new_cell = 'print("{}".format("""' + new_cell + '"""))'
+
+        # Result
+        self.shell.run_cell(new_cell)
 
     @magic_arguments()
     @argument('-s', '--size', type=str, default="small", help="Size of the generated image")
@@ -32,7 +136,7 @@ class Chatbook(Magics):
         """
         args = parse_argstring(self.dalle, line)
         args = vars(args)
-        args = {k: unquote(v) for k, v in args.items()}
+        args = {k: _unquote(v) for k, v in args.items()}
 
         # Size
         size = args.get("size", "small")
@@ -89,18 +193,22 @@ class Chatbook(Magics):
 
         args = parse_argstring(self.chat, line)
         args = vars(args)
-        args = {k: unquote(v) for k, v in args.items()}
+        args = {k: _unquote(v) for k, v in args.items()}
         chatID = args.get("chat_id", "NONE")
         if chatID in self.chatObjects:
             chatObj = self.chatObjects[chatID]
         else:
             args2 = {k: v for k, v in args.items() if k not in ["chat_id", "conf", "prompt"]}
             prompt = args.get("prompt", "")
+            if len(_unquote(prompt).strip()) > 0:
+                prompt = llm_prompt_expand(prompt, messages=[], sep="\n")
             chatObj = llm_chat(prompt, llm_evaluator=llm_evaluator(args.get("conf", "ChatGPT"), **args2))
             self.chatObjects[chatID] = chatObj
 
         # Expand prompts
-        res = llm_prompt_expand(cell, messages=chatObj.messages, sep="\n")
+        res = cell
+        if isinstance(chatObj.prompt, str) and len(chatObj.prompt.strip()) > 0:
+            res = llm_prompt_expand(res, messages=chatObj.messages, sep="\n")
 
         # Evaluate the chat message
         res = chatObj.eval(res.strip())
@@ -111,6 +219,10 @@ class Chatbook(Magics):
 
     @magic_arguments()
     @argument('chat_id', default='all', type=str, help="Identifier (name) of the chat object")
+    @argument('-p', '--prompt', default=False, type=bool,
+              help="Should the cell content be considered as prompt or not?")
+    @argument('-c', '--conf', default='ChatGPT', type=str,
+              help="Configuration to use for creating a chat object. (If --prompt is True.)")
     @cell_magic
     def chat_meta(self, line, cell):
         """
@@ -124,7 +236,13 @@ class Chatbook(Magics):
         new_cell = ""
         doit = True
         cmd = cell.strip()
-        if not (chatID == "all" or chatID in self.chatObjects):
+        if args.get("prompt", False):
+            prompt = _unquote(cell).strip()
+            prompt = llm_prompt_expand(prompt, messages=[], sep="\n")
+            chatObj = llm_chat(prompt, llm_evaluator=llm_evaluator(_unquote(args.get("conf", "ChatGPT"))))
+            self.chatObjects[chatID] = chatObj
+            new_cell = f"Created new chat object with id: ⎡{chatID}⎦\nPrompt: ⎡{prompt}⎦"
+        elif not (chatID == "all" or chatID in self.chatObjects):
             new_cell = f"Unknown chat object id: {chatID}."
         else:
             if cmd in ["drop", "delete"]:
