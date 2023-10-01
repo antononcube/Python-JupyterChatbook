@@ -1,7 +1,7 @@
 from IPython.core.magic import (Magics, magics_class, line_magic, cell_magic)
 from IPython.core.magic_arguments import (argument, magic_arguments, parse_argstring)
-from LLMFunctionObjects import llm_synthesize, llm_configuration, llm_evaluator, llm_function, llm_chat
-from LLMPrompts import llm_prompt
+from LLMFunctionObjects import llm_evaluator, llm_chat
+from LLMPrompts import llm_prompt_expand
 import openai
 import IPython
 from base64 import b64decode
@@ -99,8 +99,11 @@ class Chatbook(Magics):
             chatObj = llm_chat(prompt, llm_evaluator=llm_evaluator(args.get("conf", "ChatGPT"), **args2))
             self.chatObjects[chatID] = chatObj
 
+        # Expand prompts
+        res = llm_prompt_expand(cell, messages=chatObj.messages, sep="\n")
+
         # Evaluate the chat message
-        res = chatObj.eval(cell.strip())
+        res = chatObj.eval(res.strip())
         new_cell = 'print("{}".format("""' + res + '"""))'
 
         # Result
