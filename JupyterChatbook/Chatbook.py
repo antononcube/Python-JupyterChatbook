@@ -79,12 +79,6 @@ class Chatbook(Magics):
         else:
             openai.api_key = os.getenv("OPENAI_API_KEY")
 
-        # Call to OpenAI
-        # res = openai.ChatCompletion.create(
-        #     model=args["model"],
-        #     messages=[{"role": "user", "content": cell}]
-        # )
-
         if isinstance(args["top_p"], float):
             res = openai.ChatCompletion.create(
                 model=args["model"],
@@ -120,7 +114,6 @@ class Chatbook(Magics):
     # =====================================================
     # DALL-E
     # =====================================================
-
     @magic_arguments()
     @argument('-s', '--size', type=str, default="small", help="Size of the generated image")
     @argument('-n', type=int, default=1, help="Number of generated images")
