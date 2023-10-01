@@ -2,7 +2,7 @@ from typing import Union
 
 from IPython.core.magic import (Magics, magics_class, line_magic, cell_magic)
 from IPython.core.magic_arguments import (argument, magic_arguments, parse_argstring)
-from LLMFunctionObjects import llm_evaluator, llm_chat
+from LLMFunctionObjects import llm_configuration, llm_evaluator, llm_chat
 from LLMPrompts import llm_prompt_expand
 import openai
 import os
@@ -51,7 +51,7 @@ class Chatbook(Magics):
             stopTokens = []
         elif isinstance(stopTokens, str):
             if stopTokens.startswith("[") and stopTokens.endswith("]"):
-                stopTokens = stopTokens[1:(len(stopTokens)-1)].split(",")
+                stopTokens = stopTokens[1:(len(stopTokens) - 1)].split(",")
                 stopTokens = [_unquote(x) for x in stopTokens]
             else:
                 stopTokens = [stopTokens, ]
@@ -173,11 +173,12 @@ class Chatbook(Magics):
     # =====================================================
     @magic_arguments()
     @argument('-i', '--chat_id', default="NONE", help="Identifier (name) of the chat object")
-    @argument('--conf', type=str, help="LLM service access configuration")
+    @argument('--conf', type=str, default="ChatGPT", help="LLM service access configuration")
     @argument('--prompt', type=str, help="LLM prompt")
     @argument('--max_tokens', type=int, help="Max number of tokens for the LLM response")
     @argument('--temperature', type=float, help="Temperature to use")
     @argument('--api_key', type=str, help="API key to access the LLM service")
+    @argument('--echo', type=bool, default=False, help="Should the LLM evaluation steps be echoed or not?")
     @cell_magic
     def chat(self, line, cell):
         """
@@ -192,20 +193,28 @@ class Chatbook(Magics):
         if chatID in self.chatObjects:
             chatObj = self.chatObjects[chatID]
         else:
-            args2 = {k: v for k, v in args.items() if k not in ["chat_id", "conf", "prompt"]}
-            prompt = args.get("prompt", "")
-            if len(_unquote(prompt).strip()) > 0:
-                prompt = llm_prompt_expand(prompt, messages=[], sep="\n")
-            chatObj = llm_chat(prompt, llm_evaluator=llm_evaluator(args.get("conf", "ChatGPT"), **args2))
+            args2 = {k: v for k, v in args.items() if k not in ["chat_id", "conf", "prompt", "echo"]}
+
+            # Process prompt
+            prompt_spec = _unquote(args.get("prompt", ""))
+            if len(prompt_spec.strip()) > 0:
+                prompt_spec = llm_prompt_expand(prompt_spec, messages=[], sep="\n")
+
+            # Make LLM configuration
+            conf_spec = llm_configuration(_unquote(args["conf"]))
+
+            # Create the chat object
+            chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(conf_spec, **args2))
+
+            # Register the chat object
             self.chatObjects[chatID] = chatObj
 
         # Expand prompts
-        res = cell
-        if isinstance(chatObj.prompt, str) and len(chatObj.prompt.strip()) > 0:
-            res = llm_prompt_expand(res, messages=chatObj.messages, sep="\n")
+        res = llm_prompt_expand(cell, messages=chatObj.messages, sep="\n")
 
         # Evaluate the chat message
-        res = chatObj.eval(res.strip())
+        res = chatObj.eval(res, echo=args.get("echo", False))
+
         new_cell = 'print("{}".format("""' + res + '"""))'
 
         # Result
@@ -234,11 +243,11 @@ class Chatbook(Magics):
         doit = True
         cmd = cell.strip()
         if args.get("prompt", False):
-            prompt = _unquote(cell).strip()
-            prompt = llm_prompt_expand(prompt, messages=[], sep="\n")
-            chatObj = llm_chat(prompt, llm_evaluator=llm_evaluator(_unquote(args.get("conf", "ChatGPT"))))
+            prompt_spec = cell.strip()
+            prompt_spec = llm_prompt_expand(prompt_spec, messages=[], sep="\n")
+            chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(_unquote(args["conf"])))
             self.chatObjects[chatID] = chatObj
-            new_cell = f"Created new chat object with id: ⎡{chatID}⎦\nPrompt: ⎡{prompt}⎦"
+            new_cell = f"Created new chat object with id: ⎡{chatID}⎦\nPrompt: ⎡{prompt_spec}⎦"
         elif not (chatID == "all" or chatID in self.chatObjects):
             new_cell = f"Unknown chat object id: {chatID}."
         else:
@@ -268,6 +277,6 @@ class Chatbook(Magics):
                     self.chatObjects[chatID].print()
                     doit = False
 
-                    # Place result
+        # Place result
         if doit:
             self.shell.run_cell('print("{}".format("""' + new_cell + '"""))')
