@@ -22,6 +22,9 @@ class Chatbook(Magics):
     dallESizes = {"small": "256x256", "medium": "512x512", "large": "1024x1024",
                   "256": "256x256", "512": "512x512", "104": "1024x1024"}
 
+    # =====================================================
+    # ChatGPT
+    # =====================================================
     @magic_arguments()
     @argument('-m', '--model', type=str, default="gpt-3.5-turbo-0613", help='Model')
     @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with)')
@@ -101,15 +104,6 @@ class Chatbook(Magics):
                 stop=stopTokens
             )
 
-        # res = openai.ChatCompletion.create(
-        #     model=args["model"],
-        #     messages=[{"role": "user", "content": cell}],
-        #     n=args["n"],
-        #     stop=stopTokens,
-        #     top_p=args["top_p"],
-        #     max_tokens=args["max_tokens"]
-        # )
-
         # Post process results
         if resFormat == "asis":
             new_cell = repr(res)
@@ -122,6 +116,10 @@ class Chatbook(Magics):
 
         # Result
         self.shell.run_cell(new_cell)
+
+    # =====================================================
+    # DALL-E
+    # =====================================================
 
     @magic_arguments()
     @argument('-s', '--size', type=str, default="small", help="Size of the generated image")
@@ -177,6 +175,9 @@ class Chatbook(Magics):
             # Result
         self.shell.run_cell(new_cell)
 
+    # =====================================================
+    # Chat cell
+    # =====================================================
     @magic_arguments()
     @argument('-i', '--chat_id', default="NONE", help="Identifier (name) of the chat object")
     @argument('--conf', type=str, help="LLM service access configuration")
@@ -217,6 +218,9 @@ class Chatbook(Magics):
         # Result
         self.shell.run_cell(new_cell)
 
+    # =====================================================
+    # Chat Meta cell
+    # =====================================================
     @magic_arguments()
     @argument('chat_id', default='all', type=str, help="Identifier (name) of the chat object")
     @argument('-p', '--prompt', default=False, type=bool,
