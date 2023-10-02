@@ -6,6 +6,7 @@ from LLMFunctionObjects import llm_configuration, llm_evaluator, llm_chat
 from LLMPrompts import llm_prompt_expand
 import openai
 import os
+import pyperclip
 import IPython
 from base64 import b64decode
 
@@ -21,6 +22,29 @@ class Chatbook(Magics):
     chatObjects = {"NONE": llm_chat('', llm_evaluator='ChatGPT')}
     dallESizes = {"small": "256x256", "medium": "512x512", "large": "1024x1024",
                   "256": "256x256", "512": "512x512", "104": "1024x1024"}
+
+    # =====================================================
+    # OpenAI
+    # =====================================================
+    @magic_arguments()
+    @argument('-m', '--model', type=str, default="gpt-3.5-turbo-0613", help='Model')
+    @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with)')
+    @argument('--top_p', default=None, help='Top probability mass')
+    @argument('-n', type=int, default=1, help="Number of generated images")
+    @argument('--stop', default=None, help="Number of generated images")
+    @argument('--max_tokens', default=None, help='Max number of tokens')
+    @argument('-f', '--response_format', type=str, default="values",
+              help='Format, one of "asis", "values", or "dict"')
+    @argument('--api_key', default=None, help="API key to access the LLM service")
+    @cell_magic
+    def openai(self, line, cell):
+        """
+        OpenAI ChatGPT magic for image generation by prompt.
+        For more details about the parameters see: https://platform.openai.com/docs/api-reference/chat/create
+        (Redirects to the %%chatgpt .)
+        :return: LLM evaluation result.
+        """
+        self.chatgpt(line, cell)
 
     # =====================================================
     # ChatGPT
@@ -39,7 +63,8 @@ class Chatbook(Magics):
     def chatgpt(self, line, cell):
         """
         OpenAI ChatGPT magic for image generation by prompt.
-        :return: Image.
+        For more details about the parameters see: https://platform.openai.com/docs/api-reference/chat/create
+        :return: LLM evaluation result.
         """
         args = parse_argstring(self.chatgpt, line)
         args = vars(args)
@@ -106,6 +131,10 @@ class Chatbook(Magics):
         else:
             new_cell = repr(res)
 
+        # Copy to clipboard
+        pyperclip.copy(str(new_cell))
+
+        # Prepare output
         new_cell = 'print("{}".format("""' + new_cell + '"""))'
 
         # Result
@@ -155,17 +184,29 @@ class Chatbook(Magics):
         # Post process results
         if resFormat == "url":
             new_cell = [x["url"] for x in res["data"]]
+
+            # Copy to clipboard
+            pyperclip.copy(new_cell)
+
             new_cell = f'print("{str(new_cell)}")'
         else:
+            bImageData = []
             bImages = []
             for b in res["data"]:
                 d = b["b64_json"]
+                bImageData.append(d)
                 img = f"<img src=\"data:image/png;base64,{d}\" />"
                 bImages.append(img)
 
+            # Copy to clipboard
+            if len(bImageData) == 1:
+                pyperclip.copy(bImageData[0])
+            else:
+                pyperclip.copy(str(bImageData))
+
             new_cell = "import IPython\nIPython.display.HTML('" + ''.join(bImages) + "')"
 
-            # Result
+        # Result
         self.shell.run_cell(new_cell)
 
     # =====================================================
@@ -215,6 +256,10 @@ class Chatbook(Magics):
         # Evaluate the chat message
         res = chatObj.eval(res, echo=args.get("echo", False))
 
+        # Copy to clipboard
+        pyperclip.copy(res)
+
+        # Prepare output
         new_cell = 'print("{}".format("""' + res + '"""))'
 
         # Result
