@@ -5,6 +5,7 @@ from IPython.core.magic_arguments import (argument, magic_arguments, parse_argst
 from LLMFunctionObjects import llm_configuration, llm_evaluator, llm_chat
 from LLMPrompts import llm_prompt_expand
 import openai
+import google.generativeai
 import os
 import pyperclip
 import IPython
@@ -53,9 +54,9 @@ class Chatbook(Magics):
     @argument('-m', '--model', type=str, default="gpt-3.5-turbo-0613", help='Model')
     @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with)')
     @argument('--top_p', default=None, help='Top probability mass')
-    @argument('-n', type=int, default=1, help="Number of generated images")
-    @argument('--stop', default=None, help="Number of generated images")
-    @argument('--max_tokens', default=None, help='Max number of tokens')
+    @argument('-n', type=int, default=1, help="Number of generated responses.")
+    @argument('--stop', default=None, help="Tokens that stop the generation when produced.")
+    @argument('--max_tokens', default=None, help='Max number of tokens.')
     @argument('-f', '--response_format', type=str, default="values",
               help='Format, one of "asis", "values", or "dict"')
     @argument('--api_key', default=None, help="API key to access the LLM service")
@@ -205,6 +206,102 @@ class Chatbook(Magics):
                 pyperclip.copy(str(bImageData))
 
             new_cell = "import IPython\nIPython.display.HTML('" + ''.join(bImages) + "')"
+
+        # Result
+        self.shell.run_cell(new_cell)
+
+    # =====================================================
+    # PaLM
+    # =====================================================
+    @magic_arguments()
+    @argument('-m', '--model', type=str, default="models/chat-bison-001", help='Model')
+    @argument('-c', '--context', default=None,
+              help='Text that should be provided to the model first, to ground the response.')
+    @argument('-t', '--temperature', type=float, default=0.2, help='Temperature (to generate responses with).')
+    @argument('--top_k', default=None, help='Sets the maximum number of tokens to sample from on each step.')
+    @argument('--top_p', default=None, help='Sets the maximum cumulative probability of tokens to sample from.')
+    @argument('-n', type=int, default=1, help="The maximum number of generated response messages to return.")
+    @argument('-f', '--response_format', type=str, default="values",
+              help='Format, one of "asis", "values", or "dict"')
+    @argument('--api_key', default=None, help="API key to access the LLM service")
+    @cell_magic
+    def palm(self, line, cell):
+        """
+        Google's PaLM magic for image generation by prompt.
+        For more details about the parameters see:
+            https://developers.generativeai.google/api/python/google/generativeai/chat
+        :return: LLM evaluation result.
+        """
+        args = parse_argstring(self.palm, line)
+        args = vars(args)
+        args = {k: _unquote(v) for k, v in args.items()}
+
+        # Context
+        context = args.get("context", None)
+        if context is not None and not isinstance(context, str):
+            print(
+                f'The context argument expects a value that is a string or None. Using None.')
+            context = None
+        elif isinstance(context, str) and len(context.strip()) == 0:
+            context = None
+
+        # Top K
+        top_k = args["top_k"]
+        if isinstance(top_k, str):
+            if top_k.lower() in ["none", "null"]:
+                top_k = None
+            elif isinstance(top_k, str):
+                top_k = float(top_k)
+
+        # Top P
+        top_p = args["top_p"]
+        if isinstance(top_p, str):
+            if top_p.lower() in ["none", "null"]:
+                top_p = None
+            elif isinstance(top_p, str):
+                top_p = float(top_p)
+
+
+
+        # Response format
+        resFormat = args.get("response_format", "values")
+        if resFormat not in ["asis", "values", "dict"]:
+            print(
+                f'The response_format argument expects a value that is one of: "asis", "values", "dict". Using "dict".')
+            resFormat = "json"
+
+        # API key
+        if isinstance(args.get("api_key"), str):
+            google.generativeai.configure(api_key=args.get("api_key"))
+        else:
+            apiKey = os.environ.get("PALM_API_KEY")
+            google.generativeai.configure(api_key=apiKey)
+
+        resObj = google.generativeai.chat(
+            messages=cell,
+            model=args["model"],
+            context=context,
+            temperature=args["temperature"],
+            candidate_count=args["n"],
+            top_p=top_p,
+            top_k=top_k
+        )
+
+        res = resObj.last
+
+        # Post process results
+        if resFormat == "asis":
+            new_cell = repr(resObj)
+        elif resFormat in ["values", "value"]:
+            new_cell = res
+        else:
+            new_cell = repr(resObj)
+
+        # Copy to clipboard
+        pyperclip.copy(str(new_cell))
+
+        # Prepare output
+        new_cell = 'print("{}".format("""' + new_cell + '"""))'
 
         # Result
         self.shell.run_cell(new_cell)
