@@ -83,6 +83,23 @@ Here is screenshot:
 
 -------
 
+## TODO
+
+- [ ] TODO Implementation
+  - [ ] TODO PalM chat cell
+  - [ ] TODO Using ["pyperclip"](https://pypi.org/project/pyperclip/)
+    - [ ] TODO Basic 
+    - [ ] TODO Switching on/off copying to the clipboard
+  - [ ] TODO DALL-E image variation cell
+  - [ ] TODO Mermaid-JS cell
+  - [ ] MAYBE DeepL cell
+- [ ] TODO Documentation
+  - [ ] TODO Multi-cell LLM chats movie (teaser)
+  - [ ] TODO Multi-cell LLM chats movie (comprehensive)
+  - [ ] TODO LLM service cells movie (short)
+
+-------
+
 ## References
 
 ### Packages
