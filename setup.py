@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="JupyterChatbook",
-    version="0.0.4",
+    version="0.0.5",
     author="Anton Antonov",
     author_email="antononcube@posteo.net",
     description="Custom Jupyter magics for interacting with LLMs.",
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/antononcube/Python-JupyterChatbook",
     packages=setuptools.find_packages(),
-    install_requires=["LLMFunctionObjects", "LLMPrompts", "IPython"],
+    install_requires=["LLMFunctionObjects", "LLMPrompts", "IPython", "pyperclip"],
     classifiers=[
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
