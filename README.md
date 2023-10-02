@@ -86,15 +86,15 @@ Here is screenshot:
 ## TODO
 
 - [ ] TODO Implementation
-  - [ ] TODO PalM chat cell
+  - [X] DONE PalM chat cell
   - [ ] TODO Using ["pyperclip"](https://pypi.org/project/pyperclip/)
     - [X] DONE Basic
       - [X] `%%chatgpt`
       - [X] `%%dalle`
-      - [ ] `%%palm`
+      - [X] `%%palm`
       - [X] `%%chat`
     - [ ] TODO Switching on/off copying to the clipboard
-  - [ ] TODO DALL-E image variation cell
+  - [ ] TODO DALL-E image variations cell
   - [ ] TODO Mermaid-JS cell
   - [ ] MAYBE DeepL cell
 - [ ] TODO Documentation
