@@ -88,7 +88,11 @@ Here is screenshot:
 - [ ] TODO Implementation
   - [ ] TODO PalM chat cell
   - [ ] TODO Using ["pyperclip"](https://pypi.org/project/pyperclip/)
-    - [ ] TODO Basic 
+    - [X] DONE Basic
+      - [X] `%%chatgpt`
+      - [X] `%%dalle`
+      - [ ] `%%palm`
+      - [X] `%%chat`
     - [ ] TODO Switching on/off copying to the clipboard
   - [ ] TODO DALL-E image variation cell
   - [ ] TODO Mermaid-JS cell
