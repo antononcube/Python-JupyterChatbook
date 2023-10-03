@@ -37,6 +37,8 @@ class Chatbook(Magics):
     @argument('-f', '--response_format', type=str, default="values",
               help='Format, one of "asis", "values", or "dict"')
     @argument('--api_key', default=None, help="API key to access the LLM service")
+    @argument('--copy_to_clipboard', type=bool, default=True,
+              help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def openai(self, line, cell):
         """
@@ -60,6 +62,8 @@ class Chatbook(Magics):
     @argument('-f', '--response_format', type=str, default="values",
               help='Format, one of "asis", "values", or "dict"')
     @argument('--api_key', default=None, help="API key to access the LLM service")
+    @argument('--copy_to_clipboard', type=bool, default=True,
+              help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def chatgpt(self, line, cell):
         """
@@ -133,7 +137,8 @@ class Chatbook(Magics):
             new_cell = repr(res)
 
         # Copy to clipboard
-        pyperclip.copy(str(new_cell))
+        if args.get("copy_to_clipboard", True):
+            pyperclip.copy(str(new_cell))
 
         # Prepare output
         new_cell = 'print("{}".format("""' + new_cell + '"""))'
@@ -149,6 +154,8 @@ class Chatbook(Magics):
     @argument('-n', type=int, default=1, help="Number of generated images")
     @argument('-f', '--response_format', type=str, default="b64_json", help='Format, one of "url" or "b64_json"')
     @argument('--api_key', type=str, help="API key to access the LLM service")
+    @argument('--copy_to_clipboard', type=bool, default=True,
+              help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def dalle(self, line, cell):
         """
@@ -187,7 +194,8 @@ class Chatbook(Magics):
             new_cell = [x["url"] for x in res["data"]]
 
             # Copy to clipboard
-            pyperclip.copy(new_cell)
+            if args.get("copy_to_clipboard", True):
+                pyperclip.copy(new_cell)
 
             new_cell = f'print("{str(new_cell)}")'
         else:
@@ -200,10 +208,11 @@ class Chatbook(Magics):
                 bImages.append(img)
 
             # Copy to clipboard
-            if len(bImageData) == 1:
-                pyperclip.copy(bImageData[0])
-            else:
-                pyperclip.copy(str(bImageData))
+            if args.get("copy_to_clipboard", True):
+                if len(bImageData) == 1:
+                    pyperclip.copy(bImageData[0])
+                else:
+                    pyperclip.copy(str(bImageData))
 
             new_cell = "import IPython\nIPython.display.HTML('" + ''.join(bImages) + "')"
 
@@ -224,6 +233,8 @@ class Chatbook(Magics):
     @argument('-f', '--response_format', type=str, default="values",
               help='Format, one of "asis", "values", or "dict"')
     @argument('--api_key', default=None, help="API key to access the LLM service")
+    @argument('--copy_to_clipboard', type=bool, default=True,
+              help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def palm(self, line, cell):
         """
@@ -261,8 +272,6 @@ class Chatbook(Magics):
             elif isinstance(top_p, str):
                 top_p = float(top_p)
 
-
-
         # Response format
         resFormat = args.get("response_format", "values")
         if resFormat not in ["asis", "values", "dict"]:
@@ -298,7 +307,8 @@ class Chatbook(Magics):
             new_cell = repr(resObj)
 
         # Copy to clipboard
-        pyperclip.copy(str(new_cell))
+        if args.get("copy_to_clipboard", True):
+            pyperclip.copy(str(new_cell))
 
         # Prepare output
         new_cell = 'print("{}".format("""' + new_cell + '"""))'
@@ -317,6 +327,8 @@ class Chatbook(Magics):
     @argument('--temperature', type=float, help="Temperature to use")
     @argument('--api_key', type=str, help="API key to access the LLM service")
     @argument('--echo', type=bool, default=False, help="Should the LLM evaluation steps be echoed or not?")
+    @argument('--copy_to_clipboard', type=bool, default=True,
+              help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def chat(self, line, cell):
         """
@@ -354,7 +366,8 @@ class Chatbook(Magics):
         res = chatObj.eval(res, echo=args.get("echo", False))
 
         # Copy to clipboard
-        pyperclip.copy(res)
+        if args.get("copy_to_clipboard", True):
+            pyperclip.copy(res)
 
         # Prepare output
         new_cell = 'print("{}".format("""' + res + '"""))'
