@@ -94,13 +94,18 @@ Here is screenshot:
       - [X] `%%palm`
       - [X] `%%chat`
     - [ ] TODO Switching on/off copying to the clipboard
+      - [ ] per cell
+      - [ ] global 
   - [ ] TODO DALL-E image variations cell
   - [ ] TODO Mermaid-JS cell
+  - [ ] TODO ProdGDT cell
   - [ ] MAYBE DeepL cell
+    - See ["deepl-python"](https://github.com/DeepLcom/deepl-python)
 - [ ] TODO Documentation
   - [ ] TODO Multi-cell LLM chats movie (teaser)
   - [ ] TODO Multi-cell LLM chats movie (comprehensive)
   - [ ] TODO LLM service cells movie (short)
+  - [ ] TODO Code generation 
 
 -------
 
@@ -136,10 +141,9 @@ Here is screenshot:
 [YouTube/@AAA4Prediction](https://www.youtube.com/@AAA4prediction).
 
 [AAv2] Anton Antonov,
-["Jupyter Chatbook multi cell LLM chats teaser (Python)"](),
+["Jupyter Chatbook multi cell LLM chats teaser (Python)"](https://www.youtube.com/watch?v=8pv0QRGc7Rw),
 (2023),
 [YouTube/@AAA4Prediction](https://www.youtube.com/@AAA4prediction).
-***TBD...***
 
 
 
