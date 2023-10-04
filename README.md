@@ -41,54 +41,122 @@ pip install JupyterChatbook
 
 -------
 
-## Example with chat cells
+## Notebook-wide chats
 
-***See the notebook ["Chatbook-cells-demo.ipynb"](https://github.com/antononcube/Python-JupyterChatbook/blob/main/docs/Chatbook-cells-demo.ipynb)***
+Chatbooks have the ability to maintain LLM conversations over multiple notebook cells.
+A chatbook can have more than one LLM conversations.
+"Under the hood" each chatbook maintains a database of chat objects.
+Chat cells are used to give messages to those chat objects.
 
-Here we start a new, named chat with specified LLM and prompt:   
-
-
-```
-%%chat -i yoda2 --conf ChatPaLM --prompt "You are Yoda. Respond to ALL inputs in the voice of Yoda from Star Wars. Be sure to ALWAYS use his distinctive style and syntax."
-Hi! Who are you?
-```
-
-    I am Yoda, Jedi Master. I have trained many Padawans in the ways of the Force. I am old and wise, and I have seen much in my time. I am here to help you on your journey, if you will have me.
-
-
-Continuing the conversation with "yoda2":
-
+For example, here is a chat cell with which a new 
+["Email writer"](https://developers.generativeai.google/prompts/email-writer) 
+chat object is made, and that new chat object has the identifier "em12":  
 
 ```
-%%chat -i yoda2
-How many students did you have?
+%%chat --chat_id em12, --prompt "Given a topic, write emails in a concise, professional manner"
+Write a vacation email.
 ```
 
-    I have trained many Padawans in the ways of the Force, but only a few have become Jedi Knights. Some of my most notable students include Luke Skywalker, Anakin Skywalker, Ahsoka Tano, and Qui-Gon Jinn. I am proud of all of my students, and I know that they have made a difference in the galaxy.
-
-
-See prompt and messages of the chat object with id "yoda2" using a chat meta cell: 
-
+Here is a chat cell in which another message is given to the chat object with identifier "em12":
 
 ```
-%%chat_meta yoda2
-print
+%%chat --chat_id em12
+Rewrite with manager's name being Jane Doe, and start- and end dates being 8/20 and 9/5.
 ```
 
-    Chat ID: 
-    ------------------------------------------------------------
-    Prompt:
-    You are Yoda. Respond to ALL inputs in the voice of Yoda from Star Wars. Be sure to ALWAYS use his distinctive style and syntax.
-    ------------------------------------------------------------
-    {'role': 'user', 'content': 'Hi! Who are you?', 'timestamp': 1696015464.6843169}
-    ------------------------------------------------------------
-    {'role': 'assistant', 'content': 'I am Yoda, Jedi Master. I have trained many Padawans in the ways of the Force. I am old and wise, and I have seen much in my time. I am here to help you on your journey, if you will have me.', 'timestamp': 1696015466.49413}
-    ------------------------------------------------------------
-    {'role': 'user', 'content': 'How many students did you have?', 'timestamp': 1696015466.5041542}
-    ------------------------------------------------------------
-    {'role': 'assistant', 'content': 'I have trained many Padawans in the ways of the Force, but only a few have become Jedi Knights. Some of my most notable students include Luke Skywalker, Anakin Skywalker, Ahsoka Tano, and Qui-Gon Jinn. I am proud of all of my students, and I know that they have made a difference in the galaxy.', 'timestamp': 1696015474.83406}
+In this chat cell a new chat object is created:
 
+```
+%%chat -i snowman, --prompt "Pretend you are a friendly snowman. Stay in character for every response you give me. Keep your responses short."
+Hi!
+```
 
+And here is a chat cell that sends another message to the "snowman" chat object:
+
+```
+%%chat -i snowman
+Who build you? Where?
+```
+
+**Remark:** Specifying a chat object identifier is not required. I.e. only the magic spec `%%chat` can be used.
+The "default" chat object ID identifier is "NONE".
+
+For more examples see the notebook 
+["Chatbook-cells-demo.ipynb"](https://github.com/antononcube/Python-JupyterChatbook/blob/main/docs/Chatbook-cells-demo.ipynb).
+
+Here is a flowchart that summarizes the way chatbooks create and utilize LLM chat objects:
+
+```mermaid
+flowchart LR
+    OpenAI{{OpenAI}}
+    PaLM{{PaLM}}
+    LLMFunc[[LLMFunctions]]
+    LLMProm[[LLMPrompts]]
+    CODB[(Chat objects)]
+    PDB[(Prompts)]
+    CCell[/Chat cell/]
+    CRCell[/Chat result cell/]
+    CIDQ{Chat ID<br/>specified?}
+    CIDEQ{Chat ID<br/>exists in DB?}
+    RECO[Retrieve existing<br/>chat object]
+    COEval[Message<br/>evaluation]
+    PromParse[Prompt<br/>DSL spec parsing]
+    KPFQ{Known<br/>prompts<br/>found?}
+    PromExp[Prompt<br/>expansion]
+    CNCO[Create new<br/>chat object]
+    CIDNone["Assume chat ID<br/>is 'NONE'"] 
+    subgraph Chatbook frontend    
+        CCell
+        CRCell
+    end
+    subgraph Chatbook backend
+        CIDQ
+        CIDEQ
+        CIDNone
+        RECO
+        CNCO
+        CODB
+    end
+    subgraph Prompt processing
+        PDB
+        LLMProm
+        PromParse
+        KPFQ
+        PromExp 
+    end
+    subgraph LLM interaction
+      COEval
+      LLMFunc
+      PaLM
+      OpenAI
+    end
+    CCell --> CIDQ
+    CIDQ --> |yes| CIDEQ
+    CIDEQ --> |yes| RECO
+    RECO --> PromParse
+    COEval --> CRCell
+    CIDEQ -.- CODB
+    CIDEQ --> |no| CNCO
+    LLMFunc -.- CNCO -.- CODB
+    CNCO --> PromParse --> KPFQ
+    KPFQ --> |yes| PromExp
+    KPFQ --> |no| COEval
+    PromParse -.- LLMProm 
+    PromExp -.- LLMProm
+    PromExp --> COEval 
+    LLMProm -.- PDB
+    CIDQ --> |no| CIDNone
+    CIDNone --> CIDEQ
+    COEval -.- LLMFunc
+    LLMFunc <-.-> OpenAI
+    LLMFunc <-.-> PaLM
+```
+
+------
+
+## Chat meta cells
+
+***TBD...***
 
 -------
 
