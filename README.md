@@ -192,7 +192,8 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
         - With the argument `--copy_to_clipboard`.
       - [ ] TODO Global 
         - Can be done via the chat meta cell, but maybe a more elegant, bureaucratic solution exists.
-  - [ ] TODO DALL-E image variations cell
+  - [X] DONE DALL-E image variations cell
+    - Combined image variations and edits with `%%dalle`.
   - [ ] TODO Mermaid-JS cell
   - [ ] TODO ProdGDT cell
   - [ ] MAYBE DeepL cell
