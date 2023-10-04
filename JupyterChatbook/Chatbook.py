@@ -150,10 +150,11 @@ class Chatbook(Magics):
     # DALL-E
     # =====================================================
     @magic_arguments()
-    @argument('-s', '--size', type=str, default="small", help="Size of the generated image")
-    @argument('-n', type=int, default=1, help="Number of generated images")
-    @argument('-f', '--response_format', type=str, default="b64_json", help='Format, one of "url" or "b64_json"')
-    @argument('--api_key', type=str, help="API key to access the LLM service")
+    @argument('-s', '--size', type=str, default="small", help="Size of the generated image.")
+    @argument('-n', type=int, default=1, help="Number of generated images.")
+    @argument('--prompt', type=str, default="", help="Prompt (image edit is used if not an empty string.)")
+    @argument('-f', '--response_format', type=str, default="b64_json", help='Format, one of "url" or "b64_json".')
+    @argument('--api_key', type=str, help="API key to access the LLM service.")
     @argument('--copy_to_clipboard', type=bool, default=True,
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -182,12 +183,30 @@ class Chatbook(Magics):
             resFormat = "url"
 
         # Call to OpenAI
-        res = openai.Image.create(
-            prompt=cell,
-            n=args["n"],
-            size=size,
-            response_format=resFormat
-        )
+        if cell.strip().startswith("@") and os.path.exists(cell.strip()[1:]):
+            fileName = cell.strip()[1:]
+            if len(args.get("prompt", "").strip()) > 0:
+                res = openai.Image.create_edit(
+                    image=open(fileName, "rb"),
+                    prompt=args["prompt"],
+                    n=args["n"],
+                    size=size,
+                    response_format=resFormat
+                )
+            else:
+                res = openai.Image.create_variation(
+                    image=open(fileName, "rb"),
+                    n=args["n"],
+                    size=size,
+                    response_format=resFormat
+                )
+        else:
+            res = openai.Image.create(
+                prompt=cell,
+                n=args["n"],
+                size=size,
+                response_format=resFormat
+            )
 
         # Post process results
         if resFormat == "url":
