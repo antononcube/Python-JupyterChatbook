@@ -152,7 +152,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
 [Python-packages at GitHub/antononcube](https://github.com/antononcube/Python-packages).
 
 [AAp3] Anton Antonov,
-[Jupyter::Chatbook Raku package](https://github.com/antononcube/Raku-Jupyter-Chatbook,
+[Jupyter::Chatbook Raku package](https://github.com/antononcube/Raku-Jupyter-Chatbook),
 (2023),
 [GitHub/antononcube](https://github.com/antononcube).
 
