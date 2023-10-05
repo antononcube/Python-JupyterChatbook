@@ -369,7 +369,7 @@ class Chatbook(Magics):
     @magic_arguments()
     @argument('-i', '--chat_id', default="NONE", help="Identifier (name) of the chat object.")
     @argument('--conf', type=str, default="ChatGPT", help="LLM service access configuration.")
-    @argument('--prompt', type=str, help="LLM prompt.")
+    @argument('--prompt', type=str, default="", help="LLM prompt.")
     @argument('--max_tokens', type=int, help="Max number of tokens for the LLM response.")
     @argument('--temperature', type=float, help="Temperature to use.")
     @argument('--api_key', type=str, help="API key to access the LLM service.")
