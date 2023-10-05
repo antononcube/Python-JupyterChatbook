@@ -153,6 +153,7 @@ class Chatbook(Magics):
     @argument('-s', '--size', type=str, default="small", help="Size of the generated image.")
     @argument('-n', type=int, default=1, help="Number of generated images.")
     @argument('--prompt', type=str, default="", help="Prompt (image edit is used if not an empty string.)")
+    @argument('--mask', type=str, default = "", help="File name of a mask image")
     @argument('-f', '--response_format', type=str, default="b64_json", help='Format, one of "url" or "b64_json".')
     @argument('--api_key', type=str, help="API key to access the LLM service.")
     @argument('--copy_to_clipboard', type=bool, default=True,
@@ -185,9 +186,17 @@ class Chatbook(Magics):
         # Call to OpenAI
         if cell.strip().startswith("@") and os.path.exists(cell.strip()[1:]):
             fileName = cell.strip()[1:]
+
+            maskFileName = args["mask"]
+            if len(maskFileName.strip())==0:
+                maskImg = None
+            else:
+                maskImg = open(maskFileName.strip(), "rb")
+
             if len(args.get("prompt", "").strip()) > 0:
                 res = openai.Image.create_edit(
                     image=open(fileName, "rb"),
+                    mask=maskImg,
                     prompt=args["prompt"],
                     n=args["n"],
                     size=size,
