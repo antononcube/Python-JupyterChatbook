@@ -192,12 +192,13 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
         - With the argument `--copy_to_clipboard`.
       - [ ] TODO Global 
         - Can be done via the chat meta cell, but maybe a more elegant, bureaucratic solution exists.
-  - [X] TODO Formatted output: asis, html, markdown
+  - [X] DONE Formatted output: asis, html, markdown
       - General [lexer code](https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html#IPython.display.Code)?
         - Includes LaTeX.
-      - [ ] `%%chatgpt`
-      - [ ] `%%palm`
+      - [X] `%%chatgpt`
+      - [X] `%%palm`
       - [X] `%%chat`
+      - [ ] `%%chat_meta`?
   - [X] DONE DALL-E image variations cell
     - Combined image variations and edits with `%%dalle`.
   - [ ] TODO Mermaid-JS cell
@@ -205,9 +206,10 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
   - [ ] MAYBE DeepL cell
     - See ["deepl-python"](https://github.com/DeepLcom/deepl-python)
 - [ ] TODO Documentation
-  - [ ] TODO Multi-cell LLM chats movie (teaser)
-  - [ ] TODO Multi-cell LLM chats movie (comprehensive)
+  - [X] DONE Multi-cell LLM chats movie (teaser)
+    - See [AAv2].
   - [ ] TODO LLM service cells movie (short)
+  - [ ] TODO Multi-cell LLM chats movie (comprehensive)
   - [ ] TODO Code generation 
 
 -------
