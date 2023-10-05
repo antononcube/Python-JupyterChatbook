@@ -192,6 +192,12 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
         - With the argument `--copy_to_clipboard`.
       - [ ] TODO Global 
         - Can be done via the chat meta cell, but maybe a more elegant, bureaucratic solution exists.
+  - [X] TODO Formatted output: asis, html, markdown
+      - General [lexer code](https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html#IPython.display.Code)?
+        - Includes LaTeX.
+      - [ ] `%%chatgpt`
+      - [ ] `%%palm`
+      - [X] `%%chat`
   - [X] DONE DALL-E image variations cell
     - Combined image variations and edits with `%%dalle`.
   - [ ] TODO Mermaid-JS cell
