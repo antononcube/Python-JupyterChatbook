@@ -153,7 +153,7 @@ class Chatbook(Magics):
     @argument('-s', '--size', type=str, default="small", help="Size of the generated image.")
     @argument('-n', type=int, default=1, help="Number of generated images.")
     @argument('--prompt', type=str, default="", help="Prompt (image edit is used if not an empty string.)")
-    @argument('--mask', type=str, default = "", help="File name of a mask image")
+    @argument('--mask', type=str, default="", help="File name of a mask image")
     @argument('-f', '--response_format', type=str, default="b64_json", help='Format, one of "url" or "b64_json".')
     @argument('--api_key', type=str, help="API key to access the LLM service.")
     @argument('--copy_to_clipboard', type=bool, default=True,
@@ -188,7 +188,7 @@ class Chatbook(Magics):
             fileName = cell.strip()[1:]
 
             maskFileName = args["mask"]
-            if len(maskFileName.strip())==0:
+            if len(maskFileName.strip()) == 0:
                 maskImg = None
             else:
                 maskImg = open(maskFileName.strip(), "rb")
@@ -348,13 +348,15 @@ class Chatbook(Magics):
     # Chat cell
     # =====================================================
     @magic_arguments()
-    @argument('-i', '--chat_id', default="NONE", help="Identifier (name) of the chat object")
-    @argument('--conf', type=str, default="ChatGPT", help="LLM service access configuration")
-    @argument('--prompt', type=str, help="LLM prompt")
-    @argument('--max_tokens', type=int, help="Max number of tokens for the LLM response")
-    @argument('--temperature', type=float, help="Temperature to use")
-    @argument('--api_key', type=str, help="API key to access the LLM service")
+    @argument('-i', '--chat_id', default="NONE", help="Identifier (name) of the chat object.")
+    @argument('--conf', type=str, default="ChatGPT", help="LLM service access configuration.")
+    @argument('--prompt', type=str, help="LLM prompt.")
+    @argument('--max_tokens', type=int, help="Max number of tokens for the LLM response.")
+    @argument('--temperature', type=float, help="Temperature to use.")
+    @argument('--api_key', type=str, help="API key to access the LLM service.")
     @argument('--echo', type=bool, default=False, help="Should the LLM evaluation steps be echoed or not?")
+    @argument('-f', '--format', type=str, default='asis',
+              help="Format to display the result with. One of 'asis', 'html', or 'markdown'.")
     @argument('--copy_to_clipboard', type=bool, default=True,
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -371,7 +373,8 @@ class Chatbook(Magics):
         if chatID in self.chatObjects:
             chatObj = self.chatObjects[chatID]
         else:
-            args2 = {k: v for k, v in args.items() if k not in ["chat_id", "conf", "prompt", "echo"]}
+            args2 = {k: v for k, v in args.items() if
+                     k not in ["chat_id", "conf", "prompt", "echo", "format", "copy_to_clipboard"]}
 
             # Process prompt
             prompt_spec = _unquote(args.get("prompt", ""))
@@ -398,7 +401,13 @@ class Chatbook(Magics):
             pyperclip.copy(res)
 
         # Prepare output
-        new_cell = 'print("{}".format("""' + res + '"""))'
+        fmt = args["format"].lower()
+        if fmt == "html":
+            new_cell = "import IPython\nIPython.display.HTML(" + '"{}".format("""' + res + '"""))'
+        elif fmt in ["markdown", "md"]:
+            new_cell = "import IPython\nIPython.display.display_markdown(" + '"{}".format("""' + res + '"""), raw=True)'
+        else:
+            new_cell = 'print("{}".format("""' + res + '"""))'
 
         # Result
         self.shell.run_cell(new_cell)
