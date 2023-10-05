@@ -18,6 +18,17 @@ def _unquote(v):
     return v
 
 
+def _prep_display(cell, fmt="asis"):
+    new_cell = cell.replace('"""', '\\\"\\\"\\\"')
+    if fmt == "html":
+        new_cell = "import IPython\nIPython.display.HTML(" + '"{}".format("""' + new_cell + '"""))'
+    elif fmt in ["markdown", "md"]:
+        new_cell = "import IPython\nIPython.display.display_markdown(" + '"{}".format("""' + new_cell + '"""), raw=True)'
+    else:
+        new_cell = 'print("{}".format("""' + new_cell + '"""))'
+    return new_cell
+
+
 @magics_class
 class Chatbook(Magics):
     chatObjects = {"NONE": llm_chat('', llm_evaluator='ChatGPT')}
@@ -59,9 +70,11 @@ class Chatbook(Magics):
     @argument('-n', type=int, default=1, help="Number of generated responses.")
     @argument('--stop', default=None, help="Tokens that stop the generation when produced.")
     @argument('--max_tokens', default=None, help='Max number of tokens.')
-    @argument('-f', '--response_format', type=str, default="values",
-              help='Format, one of "asis", "values", or "dict"')
-    @argument('--api_key', default=None, help="API key to access the LLM service")
+    @argument('--response_format', type=str, default="values",
+              help='LLM response format; one of "asis", "values", or "dict".')
+    @argument('-f', '--format', type=str, default='asis',
+              help="Format to display the result with; one of 'asis', 'html', or 'markdown'.")
+    @argument('--api_key', default=None, help="API key to access the LLM service.")
     @argument('--copy_to_clipboard', type=bool, default=True,
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -141,7 +154,7 @@ class Chatbook(Magics):
             pyperclip.copy(str(new_cell))
 
         # Prepare output
-        new_cell = 'print("{}".format("""' + new_cell + '"""))'
+        new_cell = _prep_display(new_cell, args["format"].lower())
 
         # Result
         self.shell.run_cell(new_cell)
@@ -258,9 +271,11 @@ class Chatbook(Magics):
     @argument('--top_k', default=None, help='Sets the maximum number of tokens to sample from on each step.')
     @argument('--top_p', default=None, help='Sets the maximum cumulative probability of tokens to sample from.')
     @argument('-n', type=int, default=1, help="The maximum number of generated response messages to return.")
-    @argument('-f', '--response_format', type=str, default="values",
-              help='Format, one of "asis", "values", or "dict"')
-    @argument('--api_key', default=None, help="API key to access the LLM service")
+    @argument('--response_format', type=str, default="values",
+              help='LLM response format, one of "asis", "values", or "dict".')
+    @argument('-f', '--format', type=str, default='asis',
+              help="Format to display the result with; one of 'asis', 'html', or 'markdown'.")
+    @argument('--api_key', default=None, help="API key to access the LLM service.")
     @argument('--copy_to_clipboard', type=bool, default=True,
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -324,7 +339,11 @@ class Chatbook(Magics):
             top_k=top_k
         )
 
-        res = resObj.last
+        if args["n"] == 1:
+            res = resObj.last
+        else:
+            res = [x["content"] for x in resObj.candidates]
+            res = str(res)
 
         # Post process results
         if resFormat == "asis":
@@ -339,7 +358,7 @@ class Chatbook(Magics):
             pyperclip.copy(str(new_cell))
 
         # Prepare output
-        new_cell = 'print("{}".format("""' + new_cell + '"""))'
+        new_cell = _prep_display(new_cell, args["format"].lower())
 
         # Result
         self.shell.run_cell(new_cell)
@@ -356,7 +375,7 @@ class Chatbook(Magics):
     @argument('--api_key', type=str, help="API key to access the LLM service.")
     @argument('--echo', type=bool, default=False, help="Should the LLM evaluation steps be echoed or not?")
     @argument('-f', '--format', type=str, default='asis',
-              help="Format to display the result with. One of 'asis', 'html', or 'markdown'.")
+              help="Format to display the result with; one of 'asis', 'html', or 'markdown'.")
     @argument('--copy_to_clipboard', type=bool, default=True,
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -401,13 +420,7 @@ class Chatbook(Magics):
             pyperclip.copy(res)
 
         # Prepare output
-        fmt = args["format"].lower()
-        if fmt == "html":
-            new_cell = "import IPython\nIPython.display.HTML(" + '"{}".format("""' + res + '"""))'
-        elif fmt in ["markdown", "md"]:
-            new_cell = "import IPython\nIPython.display.display_markdown(" + '"{}".format("""' + res + '"""), raw=True)'
-        else:
-            new_cell = 'print("{}".format("""' + res + '"""))'
+        new_cell = _prep_display(res, args["format"].lower())
 
         # Result
         self.shell.run_cell(new_cell)
