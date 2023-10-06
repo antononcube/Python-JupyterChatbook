@@ -205,6 +205,15 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
   - [ ] TODO ProdGDT cell
   - [ ] MAYBE DeepL cell
     - See ["deepl-python"](https://github.com/DeepLcom/deepl-python)
+  - [ ] TODO Lower level access to chat objects.
+    - Like:
+      - Getting the 3rd message
+      - Removing messages after 2 second one
+      - etc.
+  - [ ] TODO Using LLM commands to manipulate chat objects
+    - Like:
+      - "Remove the messages after the second for chat profSynapse3."
+      - "Show the third messages of each chat object." 
 - [ ] TODO Documentation
   - [X] DONE Multi-cell LLM chats movie (teaser)
     - See [AAv2].
