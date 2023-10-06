@@ -410,7 +410,7 @@ class Chatbook(Magics):
             self.chatObjects[chatID] = chatObj
 
         # Expand prompts
-        res = llm_prompt_expand(cell, messages=chatObj.messages, sep="\n")
+        res = llm_prompt_expand(cell, messages=[x["content"] for x in chatObj.messages], sep="\n")
 
         # Evaluate the chat message
         res = chatObj.eval(res, echo=args.get("echo", False))
@@ -430,7 +430,7 @@ class Chatbook(Magics):
     # =====================================================
     @magic_arguments()
     @argument('-i', '--chat_id', default='NONE', type=str, help="Identifier (name) of the chat object")
-    @argument('-p', '--prompt', default=False, type=bool,
+    @argument('-p', '--prompt', action="store_true",
               help="Should the cell content be considered as prompt or not?")
     @argument('-c', '--conf', default='ChatGPT', type=str,
               help="Configuration to use for creating a chat object. (If --prompt is True.)")
