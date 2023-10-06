@@ -429,11 +429,13 @@ class Chatbook(Magics):
     # Chat Meta cell
     # =====================================================
     @magic_arguments()
-    @argument('chat_id', default='all', type=str, help="Identifier (name) of the chat object")
+    @argument('-i', '--chat_id', default='NONE', type=str, help="Identifier (name) of the chat object")
     @argument('-p', '--prompt', default=False, type=bool,
               help="Should the cell content be considered as prompt or not?")
     @argument('-c', '--conf', default='ChatGPT', type=str,
               help="Configuration to use for creating a chat object. (If --prompt is True.)")
+    @argument('--all', action="store_true",
+              help="Should the operation(s) be applied to all chat objects or not?")
     @cell_magic
     def chat_meta(self, line, cell):
         """
@@ -444,6 +446,7 @@ class Chatbook(Magics):
         args = parse_argstring(self.chat_meta, line)
         args = vars(args)
         chatID = args["chat_id"]
+        applyToAllQ = args["all"]
         new_cell = ""
         doit = True
         cmd = cell.strip()
@@ -453,30 +456,30 @@ class Chatbook(Magics):
             chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(_unquote(args["conf"])))
             self.chatObjects[chatID] = chatObj
             new_cell = f"Created new chat object with id: ⎡{chatID}⎦\nPrompt: ⎡{prompt_spec}⎦"
-        elif not (chatID == "all" or chatID in self.chatObjects):
+        elif not applyToAllQ and chatID not in self.chatObjects:
             new_cell = f"Unknown chat object id: {chatID}."
         else:
             if cmd in ["drop", "delete"]:
-                if chatID == "all":
+                if applyToAllQ:
                     new_cell = f"Dropped all chat objects {list(self.chatObjects.keys())}."
                     self.chatObjects = {}
                 else:
                     del self.chatObjects[chatID]
                     new_cell = f"Dropped the chat object {chatID}."
             elif cmd in ["clear"]:
-                if chatID == "all":
+                if applyToAllQ:
                     new_cell = f"The command 'clear' applies to chat objects only."
                 else:
                     nm = len(self.chatObjects[chatID].messages)
                     self.chatObjects[chatID].messages = []
                     new_cell = f"Cleared {nm} messages of chat object {chatID}."
             elif cmd == "prompt":
-                if chatID == "all":
+                if applyToAllQ:
                     new_cell = f"The command 'prompt' applies to chat objects only."
                 else:
                     new_cell = self.chatObjects[chatID].prompt()
             elif cmd in ["print", "say"]:
-                if chatID == "all":
+                if applyToAllQ:
                     new_cell = str(self.chatObjects)
                 else:
                     self.chatObjects[chatID].print()
