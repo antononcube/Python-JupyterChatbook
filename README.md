@@ -1,12 +1,34 @@
 # JupyterChatbook
 
-Python package of a Jupyter extension that facilitates the interaction with Large Language Models (LLMs).
+![PyPI](https://img.shields.io/pypi/v/JupyterChatbook?label=pypi%20JupyterChatbook)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/JupyterChatbook)
+
+PePy:   
+[![Downloads](https://static.pepy.tech/badge/JupyterChatbook)](https://pepy.tech/project/JupyterChatbook)
+[![Downloads](https://static.pepy.tech/badge/JupyterChatbook/month)](https://pepy.tech/project/JupyterChatbook)
+[![Downloads](https://static.pepy.tech/badge/JupyterChatbook/week)](https://pepy.tech/project/JupyterChatbook)
+
+"JupyterChatbook" is a Python package of a Jupyter extension that facilitates 
+the interaction with Large Language Models (LLMs).
 
 **Remark:** The chatbook LLM cells use the packages 
 ["openai"](https://pypi.org/project/openai/), [OAIp2], 
 and ["google-generativeai"](https://pypi.org/project/google-generativeai/), [GAIp1].
 
-**Remark:** The API keys for the LLM cells are taken from the Operating System (OS) environmental variables `OPENAI_API_KEY` and `PALM_API_KEY`.
+The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
+rom the Operating System (OS) environmental variables`OPENAI_API_KEY` and `PALM_API_KEY`.
+
+The Chatbook extension provides the cell magics:
+
+- `%%chatgpt` (and the synonym `%%openai`)
+- `%%palm`
+- `%%dalle`
+- `%%chat`
+- `%%chat_meta`
+
+The first three are for "shallow" access of the corresponding LLM services.
+The 4th one is the most important -- allows contextual, multi-cell interactions with LLMs.
+The last one is for managing the chat objects created in a notebook session.
 
 **Remark:** The results of the LLM cells are automatically copied to the clipboard
 using the package ["pyperclip"](https://pypi.org/project/pyperclip/), [ASp1].
@@ -25,6 +47,28 @@ pip install -e git+https://github.com/antononcube/Python-JupyterChatbook.git#egg
 
 ```shell
 pip install JupyterChatbook
+```
+
+-------
+
+## Setup LLM services access
+
+The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
+rom the Operating System (OS) environmental variables`OPENAI_API_KEY` and `PALM_API_KEY`. 
+(For example, set in the "~/.zshrc" file in macOS.)
+
+One way to set those environmental variables in a notebook session is to use the `%env` line magic. For example:
+
+```
+%env OPENAI_API_KEY = <YOUR API KEY>
+```
+
+Another way is to use Python code. For example:
+
+```
+import os
+os.environ['PALM_API_KEY'] = '<YOUR PALM API KEY>'
+os.environ['OPEN_API_KEY'] = '<YOUR OPEN API KEY>'
 ```
 
 -------
@@ -156,7 +200,93 @@ flowchart LR
 
 ## Chat meta cells
 
-***TBD...***
+Each chatbook session has a dictionary of chat objects.
+Chatbooks can have chat meta cells that allow the access of the chat object "database" as whole, 
+or its individual objects.  
+
+Here is an example of a chat meta cell (that applies the method `print` to the chat object with ID "snowman"):
+
+```
+%%chat_meta -i snowman 
+print
+```
+
+Here is an example of chat meta cell that creates a new chat chat object with the LLM prompt
+specified in the cell
+(["Guess the word"](https://developers.generativeai.google/prompts/guess-the-word)):
+
+```
+%%chat_meta -i WordGuesser --prompt
+We're playing a game. I'm thinking of a word, and I need to get you to guess that word. 
+But I can't say the word itself. 
+I'll give you clues, and you'll respond with a guess. 
+Your guess should be a single word only.
+```
+
+Here is another chat object creation cell using a prompt from the package
+["LLMPrompts"](https://pypi.org/project/LLMPrompts), [AAp2]:
+
+```
+%%chat_meta -i yoda1 --prompt
+@Yoda
+```
+
+Here is a table with examples of magic specs for chat meta cells and their interpretation:
+
+| cell magic line            | cell content                         | interpretation                                                  |
+|:---------------------------|:-------------------------------------|:----------------------------------------------------------------|
+| chat_meta -i ew12          | print                                | Give the "print out" of the chat object with ID "ew12"          |   
+| chat_meta --chat_id ew12   | messages                             | Give the messages of the chat object with ID "ew12"             |   
+| chat_meta -i sn22 --prompt | You pretend to be a melting snowman. | Create a chat object with ID "sn22" with the prompt in the cell |   
+| chat_meta --all            | keys                                 | Show the keys of the session chat objects DB                    |   
+| chat_meta --all            | print                                | Print the `repr` forms of the session chat objects              |   
+
+Here is a flowchart that summarizes the chat meta cell processing:
+
+```mermaid
+flowchart LR
+    LLMFunc[[LLMFunctionObjects]]
+    CODB[(Chat objects)]
+    CCell[/Chat meta cell/]
+    CRCell[/Chat meta cell result/]
+    CIDQ{Chat ID<br/>specified?}
+    KCOMQ{Known<br/>chat object<br/>method?}
+    AKWQ{Option '--all'<br/>specified?} 
+    KCODBMQ{Known<br/>chat objects<br/>DB method?}
+    CIDEQ{Chat ID<br/>exists in DB?}
+    RECO[Retrieve existing<br/>chat object]
+    COEval[Chat object<br/>method<br/>invocation]
+    CODBEval[Chat objects DB<br/>method<br/>invocation]
+    CNCO[Create new<br/>chat object]
+    CIDNone["Assume chat ID<br/>is 'NONE'"] 
+    NoCOM[/Cannot find<br/>chat object<br/>message/]
+    CntCmd[/Cannot interpret<br/>command<br/>message/]
+    subgraph Chatbook
+        CCell
+        NoCOM
+        CntCmd
+        CRCell
+    end
+    CCell --> CIDQ
+    CIDQ --> |yes| CIDEQ  
+    CIDEQ --> |yes| RECO
+    RECO --> KCOMQ
+    KCOMQ --> |yes| COEval --> CRCell
+    KCOMQ --> |no| CntCmd
+    CIDEQ -.- CODB
+    CIDEQ --> |no| NoCOM
+    LLMFunc -.- CNCO -.- CODB
+    CNCO --> COEval
+    CIDQ --> |no| AKWQ
+    AKWQ --> |yes| KCODBMQ
+    KCODBMQ --> |yes| CODBEval
+    KCODBMQ --> |no| CntCmd
+    CODBEval -.- CODB
+    CODBEval --> CRCell
+    AKWQ --> |no| CIDNone
+    CIDNone --> CIDEQ
+    COEval -.- LLMFunc
+```
 
 -------
 
@@ -189,7 +319,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
       - [X] `%%chat`
     - [ ] TODO Switching on/off copying to the clipboard
       - [X] DONE Per cell 
-        - With the argument `--copy_to_clipboard`.
+        - Controlled with the argument `--no_clipboard`.
       - [ ] TODO Global 
         - Can be done via the chat meta cell, but maybe a more elegant, bureaucratic solution exists.
   - [X] DONE Formatted output: asis, html, markdown
