@@ -9,6 +9,7 @@ import google.generativeai
 import os
 import pyperclip
 import IPython
+from IPython import display
 from base64 import b64decode
 
 
@@ -29,6 +30,19 @@ def _prep_display(cell, fmt="asis"):
     return new_cell
 
 
+def _prep_result(cell, fmt="pretty"):
+    new_cell = cell
+    if not isinstance(new_cell, str):
+        new_cell = repr(new_cell)
+    if fmt == "html":
+        new_cell = IPython.display.HTML(new_cell)
+    elif fmt in ["markdown", "md"]:
+        new_cell = IPython.display.display_markdown(new_cell, raw=True)
+    elif fmt == "pretty":
+        new_cell = IPython.display.Pretty(new_cell)
+    return new_cell
+
+
 @magics_class
 class Chatbook(Magics):
     chatObjects = {"NONE": llm_chat('', llm_evaluator='ChatGPT')}
@@ -45,10 +59,12 @@ class Chatbook(Magics):
     @argument('-n', type=int, default=1, help="Number of generated images")
     @argument('--stop', default=None, help="Number of generated images")
     @argument('--max_tokens', default=None, help='Max number of tokens')
-    @argument('-f', '--response_format', type=str, default="values",
+    @argument('--response_format', type=str, default="values",
               help='Format, one of "asis", "values", or "dict"')
+    @argument('-f', '--format', type=str, default='pretty',
+              help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
     @argument('--api_key', default=None, help="API key to access the LLM service")
-    @argument('--copy_to_clipboard', type=bool, default=True,
+    @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def openai(self, line, cell):
@@ -72,10 +88,10 @@ class Chatbook(Magics):
     @argument('--max_tokens', default=None, help='Max number of tokens.')
     @argument('--response_format', type=str, default="values",
               help='LLM response format; one of "asis", "values", or "dict".')
-    @argument('-f', '--format', type=str, default='asis',
-              help="Format to display the result with; one of 'asis', 'html', or 'markdown'.")
+    @argument('-f', '--format', type=str, default='pretty',
+              help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
     @argument('--api_key', default=None, help="API key to access the LLM service.")
-    @argument('--copy_to_clipboard', type=bool, default=True,
+    @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def chatgpt(self, line, cell):
@@ -150,14 +166,16 @@ class Chatbook(Magics):
             new_cell = repr(res)
 
         # Copy to clipboard
-        if args.get("copy_to_clipboard", True):
+        if not args.get("no_clipboard", False):
             pyperclip.copy(str(new_cell))
 
         # Prepare output
-        new_cell = _prep_display(new_cell, args["format"].lower())
+        # new_cell = _prep_display(new_cell, args["format"].lower())
+        new_cell = _prep_result(new_cell, args["format"].lower())
 
         # Result
-        self.shell.run_cell(new_cell)
+        # self.shell.run_cell(new_cell)
+        return new_cell
 
     # =====================================================
     # DALL-E
@@ -169,7 +187,7 @@ class Chatbook(Magics):
     @argument('--mask', type=str, default="", help="File name of a mask image")
     @argument('-f', '--response_format', type=str, default="b64_json", help='Format, one of "url" or "b64_json".')
     @argument('--api_key', type=str, help="API key to access the LLM service.")
-    @argument('--copy_to_clipboard', type=bool, default=True,
+    @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def dalle(self, line, cell):
@@ -235,7 +253,7 @@ class Chatbook(Magics):
             new_cell = [x["url"] for x in res["data"]]
 
             # Copy to clipboard
-            if args.get("copy_to_clipboard", True):
+            if not args.get("no_clipboard", False):
                 pyperclip.copy(new_cell)
 
             new_cell = f'print("{str(new_cell)}")'
@@ -249,7 +267,7 @@ class Chatbook(Magics):
                 bImages.append(img)
 
             # Copy to clipboard
-            if args.get("copy_to_clipboard", True):
+            if not args.get("no_clipboard", False):
                 if len(bImageData) == 1:
                     pyperclip.copy(bImageData[0])
                 else:
@@ -273,10 +291,10 @@ class Chatbook(Magics):
     @argument('-n', type=int, default=1, help="The maximum number of generated response messages to return.")
     @argument('--response_format', type=str, default="values",
               help='LLM response format, one of "asis", "values", or "dict".')
-    @argument('-f', '--format', type=str, default='asis',
-              help="Format to display the result with; one of 'asis', 'html', or 'markdown'.")
+    @argument('-f', '--format', type=str, default='pretty',
+              help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
     @argument('--api_key', default=None, help="API key to access the LLM service.")
-    @argument('--copy_to_clipboard', type=bool, default=True,
+    @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def palm(self, line, cell):
@@ -354,14 +372,16 @@ class Chatbook(Magics):
             new_cell = repr(resObj)
 
         # Copy to clipboard
-        if args.get("copy_to_clipboard", True):
+        if not args.get("no_clipboard", False):
             pyperclip.copy(str(new_cell))
 
         # Prepare output
-        new_cell = _prep_display(new_cell, args["format"].lower())
+        # new_cell = _prep_display(new_cell, args["format"].lower())
+        new_cell = _prep_result(new_cell, args["format"].lower())
 
         # Result
-        self.shell.run_cell(new_cell)
+        # self.shell.run_cell(new_cell)
+        return new_cell
 
     # =====================================================
     # Chat cell
@@ -374,9 +394,9 @@ class Chatbook(Magics):
     @argument('--temperature', type=float, help="Temperature to use.")
     @argument('--api_key', type=str, help="API key to access the LLM service.")
     @argument('--echo', type=bool, default=False, help="Should the LLM evaluation steps be echoed or not?")
-    @argument('-f', '--format', type=str, default='asis',
-              help="Format to display the result with; one of 'asis', 'html', or 'markdown'.")
-    @argument('--copy_to_clipboard', type=bool, default=True,
+    @argument('-f', '--format', type=str, default='pretty',
+              help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
+    @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
     def chat(self, line, cell):
@@ -393,7 +413,7 @@ class Chatbook(Magics):
             chatObj = self.chatObjects[chatID]
         else:
             args2 = {k: v for k, v in args.items() if
-                     k not in ["chat_id", "conf", "prompt", "echo", "format", "copy_to_clipboard"]}
+                     k not in ["chat_id", "conf", "prompt", "echo", "format", "no_clipboard"]}
 
             # Process prompt
             prompt_spec = _unquote(args.get("prompt", ""))
@@ -416,14 +436,16 @@ class Chatbook(Magics):
         res = chatObj.eval(res, echo=args.get("echo", False))
 
         # Copy to clipboard
-        if args.get("copy_to_clipboard", True):
+        if not args.get("no_clipboard", False):
             pyperclip.copy(res)
 
         # Prepare output
-        new_cell = _prep_display(res, args["format"].lower())
+        # new_cell = _prep_display(res, args["format"].lower())
+        new_cell = _prep_result(res, args["format"].lower())
 
         # Result
-        self.shell.run_cell(new_cell)
+        # self.shell.run_cell(new_cell)
+        return new_cell
 
     # =====================================================
     # Chat Meta cell
@@ -484,7 +506,14 @@ class Chatbook(Magics):
                 else:
                     self.chatObjects[chatID].print()
                     doit = False
+            elif cmd in ["keys", "names"]:
+                if applyToAllQ:
+                    new_cell = str(list(self.chatObjects.keys()))
+                else:
+                    new_cell = str([chatID,])
 
         # Place result
         if doit:
-            self.shell.run_cell('print("{}".format("""' + new_cell + '"""))')
+            # self.shell.run_cell('print("{}".format("""' + new_cell + '"""))')
+            new_cell = _prep_result(new_cell, "pretty")
+            return new_cell
