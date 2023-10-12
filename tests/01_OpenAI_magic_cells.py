@@ -25,7 +25,7 @@ class OpenAIMagicCellsTests(unittest.TestCase):
         ish = ici.InteractiveShell()
         cells = [
             "%load_ext JupyterChatbook",
-            "%%dalle --size=small --copy_to_clipboard=" + """
+            "%%dalle --size=small --no_clipboard" + """
             Tundra landscape painting in the style of Rafael.
             """
         ]
