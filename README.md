@@ -1,12 +1,14 @@
 # JupyterChatbook
 
 ![PyPI](https://img.shields.io/pypi/v/JupyterChatbook?label=pypi%20JupyterChatbook)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/JupyterChatbook)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/JupyterChatbook)](https://pypistats.org/packages/jupyterchatbook)
 
+<!---
 PePy:   
 [![Downloads](https://static.pepy.tech/badge/JupyterChatbook)](https://pepy.tech/project/JupyterChatbook)
 [![Downloads](https://static.pepy.tech/badge/JupyterChatbook/month)](https://pepy.tech/project/JupyterChatbook)
 [![Downloads](https://static.pepy.tech/badge/JupyterChatbook/week)](https://pepy.tech/project/JupyterChatbook)
+--->
 
 "JupyterChatbook" is a Python package of a Jupyter extension that facilitates 
 the interaction with Large Language Models (LLMs).
