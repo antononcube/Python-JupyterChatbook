@@ -74,7 +74,7 @@ class Chatbook(Magics):
         (Redirects to the %%chatgpt .)
         :return: LLM evaluation result.
         """
-        self.chatgpt(line, cell)
+        return self.chatgpt(line, cell)
 
     # =====================================================
     # ChatGPT
