@@ -13,13 +13,6 @@ PePy:
 "JupyterChatbook" is a Python package of a Jupyter extension that facilitates 
 the interaction with Large Language Models (LLMs).
 
-**Remark:** The chatbook LLM cells use the packages 
-["openai"](https://pypi.org/project/openai/), [OAIp2], 
-and ["google-generativeai"](https://pypi.org/project/google-generativeai/), [GAIp1].
-
-The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
-rom the Operating System (OS) environmental variables`OPENAI_API_KEY` and `PALM_API_KEY`.
-
 The Chatbook extension provides the cell magics:
 
 - `%%chatgpt` (and the synonym `%%openai`)
@@ -32,8 +25,20 @@ The first three are for "shallow" access of the corresponding LLM services.
 The 4th one is the most important -- allows contextual, multi-cell interactions with LLMs.
 The last one is for managing the chat objects created in a notebook session.
 
+**Remark:** The chatbook LLM cells use the packages 
+["openai"](https://pypi.org/project/openai/), [OAIp2], 
+and ["google-generativeai"](https://pypi.org/project/google-generativeai/), [GAIp1].
+
 **Remark:** The results of the LLM cells are automatically copied to the clipboard
 using the package ["pyperclip"](https://pypi.org/project/pyperclip/), [ASp1].
+
+**Remark:** The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
+rom the Operating System (OS) environmental variables `OPENAI_API_KEY` and `PALM_API_KEY`. 
+(See below the setup section for LLM services access.)
+
+Here is a couple of movies [AAv2, AAv3] that provide quick introductions to the features:
+- ["Jupyter Chatbook LLM cells demo (Python)"](https://youtu.be/WN3N-K_Xzz8), (4.8 min)
+- ["Jupyter Chatbook multi cell LLM chats teaser (Python)"](https://www.youtube.com/watch?v=8pv0QRGc7Rw), (4.5 min)
 
 --------
 
@@ -397,9 +402,12 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
 [YouTube/@AAA4Prediction](https://www.youtube.com/@AAA4prediction).
 
 [AAv2] Anton Antonov,
-["Jupyter Chatbook multi cell LLM chats teaser (Python)"](https://www.youtube.com/watch?v=8pv0QRGc7Rw),
+["Jupyter Chatbook LLM cells demo (Python)"](https://youtu.be/WN3N-K_Xzz8),
 (2023),
 [YouTube/@AAA4Prediction](https://www.youtube.com/@AAA4prediction).
 
-
+[AAv3] Anton Antonov,
+["Jupyter Chatbook multi cell LLM chats teaser (Python)"](https://www.youtube.com/watch?v=8pv0QRGc7Rw),
+(2023),
+[YouTube/@AAA4Prediction](https://www.youtube.com/@AAA4prediction).
 
