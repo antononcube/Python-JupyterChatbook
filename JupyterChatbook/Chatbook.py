@@ -69,7 +69,7 @@ class Chatbook(Magics):
     @cell_magic
     def openai(self, line, cell):
         """
-        OpenAI ChatGPT magic for image generation by prompt.
+        OpenAI ChatGPT magic for text generation by prompt.
         For more details about the parameters see: https://platform.openai.com/docs/api-reference/chat/create
         (Redirects to the %%chatgpt .)
         :return: LLM evaluation result.
@@ -96,7 +96,7 @@ class Chatbook(Magics):
     @cell_magic
     def chatgpt(self, line, cell):
         """
-        OpenAI ChatGPT magic for image generation by prompt.
+        OpenAI ChatGPT magic for text generation by prompt.
         For more details about the parameters see: https://platform.openai.com/docs/api-reference/chat/create
         :return: LLM evaluation result.
         """
@@ -193,6 +193,7 @@ class Chatbook(Magics):
     def dalle(self, line, cell):
         """
         OpenAI DALL-E magic for image generation by prompt.
+        For more details see https://platform.openai.com/docs/api-reference/images .
         :return: Image.
         """
         args = parse_argstring(self.dalle, line)
