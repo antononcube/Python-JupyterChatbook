@@ -46,8 +46,10 @@ def _prep_result(cell, fmt="pretty"):
 @magics_class
 class Chatbook(Magics):
     chatObjects = {"NONE": llm_chat('', llm_evaluator='ChatGPT')}
-    dallESizes = {"small": "256x256", "medium": "512x512", "large": "1024x1024",
-                  "256": "256x256", "512": "512x512", "104": "1024x1024"}
+    dallE2Sizes = {"small": "256x256", "medium": "512x512", "large": "1024x1024",
+                   "256": "256x256", "512": "512x512", "104": "1024x1024", "default": "256x256", }
+    dallE3Sizes = {"square": "1024x1024", "landscape": "1792x1024", "portrait": "1024x1792",
+                   "1024": "1024x1024", "default": "1024x1024"}
 
     # =====================================================
     # OpenAI
@@ -182,6 +184,7 @@ class Chatbook(Magics):
     # DALL-E
     # =====================================================
     @magic_arguments()
+    @argument('-m', '--model', type=str, default="dall-e-2", help='Model')
     @argument('-s', '--size', type=str, default="small", help="Size of the generated image.")
     @argument('-n', type=int, default=1, help="Number of generated images.")
     @argument('--prompt', type=str, default="", help="Prompt (image edit is used if not an empty string.)")
@@ -201,14 +204,40 @@ class Chatbook(Magics):
         args = vars(args)
         args = {k: _unquote(v) for k, v in args.items()}
 
+        numberOfImages = args.get("n", 1)
+        if numberOfImages < 1:
+            print(f'The argument n is expected to be a positive integer, got {numberOfImages}.')
+            numberOfImages = 1
+
+        # Model
+        model = args.get("model", "dall-e-2")
+        if model not in ["dall-e-2", "dall-e-3"]:
+            print(f'Unknown model.')
+
+        if model == "dall-e-3" and numberOfImages > 1:
+            print(f'Currently for dall-e-3 only n=1 is supported.')
+            numberOfImages = 1
+
         # Size
         size = args.get("size", "small")
-        if size not in self.dallESizes:
-            expectedValues = list(self.dallESizes.keys()) + [self.dallESizes["small"], self.dallESizes["medium"],
-                                                             self.dallESizes["large"]]
-            print(f'The size argument expects a value that is one of: {expectedValues}. Using "256x256".')
+        if model == "dall-e-2":
+            if size not in self.dallE2Sizes:
+                expectedValues = list(self.dallE2Sizes.keys()) + [self.dallE2Sizes["small"],
+                                                                  self.dallE2Sizes["medium"],
+                                                                  self.dallE2Sizes["large"]]
+                print(
+                    f'For model dall-e-2, the size argument expects a value that is one of: {expectedValues}. Using "256x256".')
 
-        size = self.dallESizes.get(size, "256x256")
+            size = self.dallE2Sizes.get(size, "256x256")
+        elif model == "dall-e-3":
+            if size not in self.dallE3Sizes:
+                expectedValues = list(self.dallE3Sizes.keys()) + [self.dallE3Sizes["square"],
+                                                                  self.dallE3Sizes["landscape"],
+                                                                  self.dallE3Sizes["portrait"]]
+                print(
+                    f'For model dall-e-3, the size argument expects a value that is one of: {expectedValues}. Using "1024x1024".')
+
+            size = self.dallE3Sizes.get(size, "1024x1024")
 
         # Response format
         resFormat = args.get("response_format", "b64_json")
@@ -231,21 +260,22 @@ class Chatbook(Magics):
                     image=open(fileName, "rb"),
                     mask=maskImg,
                     prompt=args["prompt"],
-                    n=args["n"],
+                    n=numberOfImages,
                     size=size,
                     response_format=resFormat
                 )
             else:
                 res = openai.images.create_variation(
                     image=open(fileName, "rb"),
-                    n=args["n"],
+                    n=numberOfImages,
                     size=size,
                     response_format=resFormat
                 )
         else:
             res = openai.images.generate(
                 prompt=cell,
-                n=args["n"],
+                model=model,
+                n=numberOfImages,
                 size=size,
                 response_format=resFormat
             )
@@ -512,7 +542,7 @@ class Chatbook(Magics):
                 if applyToAllQ:
                     new_cell = str(list(self.chatObjects.keys()))
                 else:
-                    new_cell = str([chatID,])
+                    new_cell = str([chatID, ])
 
         # Place result
         if doit:
