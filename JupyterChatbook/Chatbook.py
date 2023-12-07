@@ -139,7 +139,7 @@ class Chatbook(Magics):
             openai.api_key = os.getenv("OPENAI_API_KEY")
 
         if isinstance(args["top_p"], float):
-            res = openai.ChatCompletion.create(
+            res = openai.chat.completions.create(
                 model=args["model"],
                 messages=[{"role": "user", "content": cell}],
                 n=args["n"],
@@ -148,7 +148,7 @@ class Chatbook(Magics):
                 stop=stopTokens
             )
         else:
-            res = openai.ChatCompletion.create(
+            res = openai.chat.completions.create(
                 model=args["model"],
                 messages=[{"role": "user", "content": cell}],
                 n=args["n"],
@@ -161,7 +161,8 @@ class Chatbook(Magics):
         if resFormat == "asis":
             new_cell = repr(res)
         elif resFormat in ["values", "value"]:
-            new_cell = "\n".join([x["message"]["content"] for x in res.choices])
+            # was: new_cell = "\n".join([x["message"]["content"] for x in res.choices])
+            new_cell = "\n".join([x.message.content for x in res.choices])
         else:
             new_cell = repr(res)
 
