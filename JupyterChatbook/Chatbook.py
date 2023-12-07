@@ -227,7 +227,7 @@ class Chatbook(Magics):
                 maskImg = open(maskFileName.strip(), "rb")
 
             if len(args.get("prompt", "").strip()) > 0:
-                res = openai.Image.create_edit(
+                res = openai.images.edit(
                     image=open(fileName, "rb"),
                     mask=maskImg,
                     prompt=args["prompt"],
@@ -236,14 +236,14 @@ class Chatbook(Magics):
                     response_format=resFormat
                 )
             else:
-                res = openai.Image.create_variation(
+                res = openai.images.create_variation(
                     image=open(fileName, "rb"),
                     n=args["n"],
                     size=size,
                     response_format=resFormat
                 )
         else:
-            res = openai.Image.create(
+            res = openai.images.generate(
                 prompt=cell,
                 n=args["n"],
                 size=size,
@@ -252,7 +252,7 @@ class Chatbook(Magics):
 
         # Post process results
         if resFormat == "url":
-            new_cell = [x["url"] for x in res["data"]]
+            new_cell = [x.url for x in res.data]
 
             # Copy to clipboard
             if not args.get("no_clipboard", False):
@@ -262,8 +262,8 @@ class Chatbook(Magics):
         else:
             bImageData = []
             bImages = []
-            for b in res["data"]:
-                d = b["b64_json"]
+            for b in res.data:
+                d = b.b64_json
                 bImageData.append(d)
                 img = f"<img src=\"data:image/png;base64,{d}\" />"
                 bImages.append(img)
