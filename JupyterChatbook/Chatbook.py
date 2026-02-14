@@ -593,6 +593,7 @@ class Chatbook(Magics):
     @magic_arguments()
     @argument('-i', '--chat_id', default="NONE", help="Identifier (name) of the chat object.")
     @argument('--conf', type=str, default="ChatGPT", help="LLM service access configuration.")
+    @argument('-m', '--model', type=str, default="", help='Model')
     @argument('--prompt', type=str, default="", help="LLM prompt.")
     @argument('--max_tokens', type=int, help="Max number of tokens for the LLM response.")
     @argument('--temperature', type=float, help="Temperature to use.")
@@ -624,8 +625,13 @@ class Chatbook(Magics):
             if len(prompt_spec.strip()) > 0:
                 prompt_spec = llm_prompt_expand(prompt_spec, messages=[], sep="\n")
 
+            # Model
+            model_spec = _unquote(args.get("model", ""))
             # Make LLM configuration
-            conf_spec = llm_configuration(_unquote(args["conf"]))
+            if len(model_spec.strip()) > 0:
+                conf_spec = llm_configuration(_unquote(args["conf"]), model=model_spec)
+            else:
+                conf_spec = llm_configuration(_unquote(args["conf"]))
 
             # Create the chat object
             chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(conf_spec, **args2))
