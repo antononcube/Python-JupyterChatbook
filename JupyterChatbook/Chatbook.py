@@ -4,11 +4,14 @@ from IPython.core.magic import (Magics, magics_class, line_magic, cell_magic)
 from IPython.core.magic_arguments import (argument, magic_arguments, parse_argstring)
 from LLMFunctionObjects import llm_configuration, llm_evaluator, llm_chat
 from LLMPrompts import llm_prompt_expand
+import json
 import openai
 import google.generativeai
 import os
 import pyperclip
 import IPython
+import urllib.request
+import urllib.error
 from IPython import display
 from base64 import b64decode
 
@@ -41,6 +44,38 @@ def _prep_result(cell, fmt="pretty"):
     elif fmt == "pretty":
         new_cell = IPython.display.Pretty(new_cell)
     return new_cell
+
+
+def _ollama_url(host, path):
+    host = host.rstrip("/")
+    return f"{host}{path}"
+
+
+def _ollama_request_json(url, payload=None, timeout=60):
+    if payload is None:
+        req = urllib.request.Request(url, method="GET")
+    else:
+        body = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=body, method="POST")
+        req.add_header("Content-Type", "application/json")
+
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        data = resp.read()
+    return json.loads(data.decode("utf-8"))
+
+
+def _ollama_get_models(host):
+    try:
+        data = _ollama_request_json(_ollama_url(host, "/api/tags"))
+    except Exception:
+        return []
+    models = data.get("models", [])
+    names = []
+    for m in models:
+        name = m.get("name") or m.get("model")
+        if isinstance(name, str) and name.strip():
+            names.append(name)
+    return names
 
 
 @magics_class
@@ -420,6 +455,136 @@ class Chatbook(Magics):
 
         # Result
         # self.shell.run_cell(new_cell)
+        return new_cell
+
+    # =====================================================
+    # Ollama
+    # =====================================================
+    @magic_arguments()
+    @argument('-m', '--model', type=str, default=None,
+              help='Model (if omitted, the first available model is used).')
+    @argument('--host', type=str, default=None,
+              help='Ollama server URL. Defaults to $OLLAMA_HOST or http://localhost:11434.')
+    @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with).')
+    @argument('--top_p', default=None, help='Top probability mass.')
+    @argument('--top_k', default=None, help='Top-K sampling.')
+    @argument('--num_predict', default=None, help='Max number of tokens.')
+    @argument('--stop', default=None, help='Tokens that stop the generation when produced.')
+    @argument('--response_format', type=str, default="values",
+              help='LLM response format; one of "asis", "values", or "dict".')
+    @argument('-f', '--format', type=str, default='pretty',
+              help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
+    @argument('--no_clipboard', action="store_true",
+              help="Should the result be copied to the clipboard or not?")
+    @cell_magic
+    def ollama(self, line, cell):
+        """
+        Ollama magic for text generation by prompt.
+        For more details about the parameters see: https://github.com/ollama/ollama/blob/main/docs/api.md
+        :return: LLM evaluation result.
+        """
+        args = parse_argstring(self.ollama, line)
+        args = vars(args)
+        args = {k: _unquote(v) for k, v in args.items()}
+
+        # Stop tokens
+        stopTokens = args.get("stop")
+        if stopTokens is None:
+            stopTokens = []
+        elif isinstance(stopTokens, str):
+            if stopTokens.startswith("[") and stopTokens.endswith("]"):
+                stopTokens = stopTokens[1:(len(stopTokens) - 1)].split(",")
+                stopTokens = [_unquote(x) for x in stopTokens]
+            else:
+                stopTokens = [stopTokens, ]
+        else:
+            print(f"Cannot process the given stop tokens {stopTokens}.")
+            stopTokens = []
+
+        # Max tokens
+        numPredict = args["num_predict"]
+        if isinstance(numPredict, str):
+            if numPredict.lower() in ["none", "null"]:
+                numPredict = None
+            else:
+                numPredict = int(numPredict)
+
+        # Top K
+        top_k = args["top_k"]
+        if isinstance(top_k, str):
+            if top_k.lower() in ["none", "null"]:
+                top_k = None
+            else:
+                top_k = int(top_k)
+
+        # Top P
+        top_p = args["top_p"]
+        if isinstance(top_p, str):
+            if top_p.lower() in ["none", "null"]:
+                top_p = None
+            else:
+                top_p = float(top_p)
+
+        # Response format
+        resFormat = args.get("response_format", "values")
+        if resFormat not in ["asis", "values", "dict"]:
+            print(
+                f'The response_format argument expects a value that is one of: "asis", "values", "dict". Using "dict".')
+            resFormat = "json"
+
+        # Host and model
+        host = args.get("host") or os.environ.get("OLLAMA_HOST") or "http://localhost:11434"
+        model = args.get("model") or os.environ.get("OLLAMA_MODEL")
+        if model is None or len(str(model).strip()) == 0:
+            models = _ollama_get_models(host)
+            if len(models) > 0:
+                model = models[0]
+            else:
+                model = "llama3"
+
+        options = {}
+        if args.get("temperature") is not None:
+            options["temperature"] = args["temperature"]
+        if top_p is not None:
+            options["top_p"] = top_p
+        if top_k is not None:
+            options["top_k"] = top_k
+        if numPredict is not None:
+            options["num_predict"] = numPredict
+        if len(stopTokens) > 0:
+            options["stop"] = stopTokens
+
+        payload = {
+            "model": model,
+            "prompt": cell,
+            "stream": False
+        }
+        if len(options) > 0:
+            payload["options"] = options
+
+        try:
+            resObj = _ollama_request_json(_ollama_url(host, "/api/generate"), payload=payload)
+            res = resObj.get("response", "")
+        except Exception as e:
+            resObj = {"error": str(e)}
+            res = f"Ollama request failed: {e}"
+
+        # Post process results
+        if resFormat == "asis":
+            new_cell = repr(resObj)
+        elif resFormat in ["values", "value"]:
+            new_cell = res
+        else:
+            new_cell = repr(resObj)
+
+        # Copy to clipboard
+        if not args.get("no_clipboard", False):
+            pyperclip.copy(str(new_cell))
+
+        # Prepare output
+        new_cell = _prep_result(new_cell, args["format"].lower())
+
+        # Result
         return new_cell
 
     # =====================================================
