@@ -318,12 +318,17 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
 
 - [ ] TODO Implementation
   - [X] DONE PalM chat cell
+    - Obsoleted by Google
+  - [X] DONE Gemini magic cell
+    - Replacing the PaLM cell
+  - [X] DONE Ollama magic cell
   - [ ] TODO Using ["pyperclip"](https://pypi.org/project/pyperclip/)
     - [X] DONE Basic
       - [X] `%%chatgpt`
       - [X] `%%dalle`
       - [X] `%%palm`
       - [X] `%%chat`
+      - [X] `%%gemini`
     - [ ] TODO Switching on/off copying to the clipboard
       - [X] DONE Per cell 
         - Controlled with the argument `--no_clipboard`.
@@ -335,6 +340,8 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
       - [X] `%%chatgpt`
       - [X] `%%palm`
       - [X] `%%chat`
+      - [X] `%%gemini`
+      - [X] `%%ollama`
       - [ ] `%%chat_meta`?
   - [X] DONE DALL-E image variations cell
     - Combined image variations and edits with `%%dalle`.
@@ -350,7 +357,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
   - [ ] TODO Using LLM commands to manipulate chat objects
     - Like:
       - "Remove the messages after the second for chat profSynapse3."
-      - "Show the third messages of each chat object." 
+      - "Show the third messages of each chat object."
 - [ ] TODO Documentation
   - [X] DONE Multi-cell LLM chats movie (teaser)
     - See [AAv2].
