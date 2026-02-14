@@ -16,7 +16,8 @@ the interaction with Large Language Models (LLMs).
 The Chatbook extension provides the cell magics:
 
 - `%%chatgpt` (and the synonym `%%openai`)
-- `%%palm`
+- `%%gemini`
+- `%%ollama`
 - `%%dalle`
 - `%%chat`
 - `%%chat_meta`
@@ -32,8 +33,8 @@ and ["google-generativeai"](https://pypi.org/project/google-generativeai/), [GAI
 **Remark:** The results of the LLM cells are automatically copied to the clipboard
 using the package ["pyperclip"](https://pypi.org/project/pyperclip/), [ASp1].
 
-**Remark:** The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
-rom the Operating System (OS) environmental variables `OPENAI_API_KEY` and `PALM_API_KEY`. 
+**Remark:** The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken 
+from the Operating System (OS) environmental variables `OPENAI_API_KEY` and `GEMINI_API_KEY`. 
 (See below the setup section for LLM services access.)
 
 Here is a couple of movies [AAv2, AAv3] that provide quick introductions to the features:
@@ -61,7 +62,7 @@ pip install JupyterChatbook
 ## Setup LLM services access
 
 The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
-rom the Operating System (OS) environmental variables`OPENAI_API_KEY` and `PALM_API_KEY`. 
+rom the Operating System (OS) environmental variables`OPENAI_API_KEY` and `GEMINI_API_KEY`. 
 (For example, set in the "~/.zshrc" file in macOS.)
 
 One way to set those environmental variables in a notebook session is to use the `%env` line magic. For example:
@@ -74,7 +75,7 @@ Another way is to use Python code. For example:
 
 ```
 import os
-os.environ['PALM_API_KEY'] = '<YOUR PALM API KEY>'
+os.environ['GEMINI_API_KEY'] = '<YOUR GEMINI API KEY>'
 os.environ['OPEN_API_KEY'] = '<YOUR OPEN API KEY>'
 ```
 
