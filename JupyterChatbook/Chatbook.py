@@ -628,10 +628,14 @@ class Chatbook(Magics):
             # Model
             model_spec = _unquote(args.get("model", ""))
             # Make LLM configuration
+            conf_args = {}
             if len(model_spec.strip()) > 0:
-                conf_spec = llm_configuration(_unquote(args["conf"]), model=model_spec)
-            else:
-                conf_spec = llm_configuration(_unquote(args["conf"]))
+                conf_args["model"] = model_spec
+            if args.get("max_tokens") is not None:
+                conf_args["max_tokens"] = args["max_tokens"]
+            if args.get("temperature") is not None:
+                conf_args["temperature"] = args["temperature"]
+            conf_spec = llm_configuration(_unquote(args["conf"]), **conf_args)
 
             # Create the chat object
             chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(conf_spec, **args2))
