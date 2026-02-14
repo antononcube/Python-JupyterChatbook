@@ -55,7 +55,7 @@ class Chatbook(Magics):
     # OpenAI
     # =====================================================
     @magic_arguments()
-    @argument('-m', '--model', type=str, default="gpt-3.5-turbo-0613", help='Model')
+    @argument('-m', '--model', type=str, default="gpt-5.2", help='Model')
     @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with)')
     @argument('--top_p', default=None, help='Top probability mass')
     @argument('-n', type=int, default=1, help="Number of generated images")
@@ -82,7 +82,7 @@ class Chatbook(Magics):
     # ChatGPT
     # =====================================================
     @magic_arguments()
-    @argument('-m', '--model', type=str, default="gpt-3.5-turbo-0613", help='Model')
+    @argument('-m', '--model', type=str, default="gpt-4.1-mini", help='Model')
     @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with)')
     @argument('--top_p', default=None, help='Top probability mass')
     @argument('-n', type=int, default=1, help="Number of generated responses.")
@@ -163,7 +163,6 @@ class Chatbook(Magics):
         if resFormat == "asis":
             new_cell = repr(res)
         elif resFormat in ["values", "value"]:
-            # was: new_cell = "\n".join([x["message"]["content"] for x in res.choices])
             new_cell = "\n".join([x.message.content for x in res.choices])
         else:
             new_cell = repr(res)
@@ -311,10 +310,10 @@ class Chatbook(Magics):
         self.shell.run_cell(new_cell)
 
     # =====================================================
-    # PaLM
+    # Gemini
     # =====================================================
     @magic_arguments()
-    @argument('-m', '--model', type=str, default="models/chat-bison-001", help='Model')
+    @argument('-m', '--model', type=str, default="models/gemini-2.5-flash", help='Model')
     @argument('-c', '--context', default=None,
               help='Text that should be provided to the model first, to ground the response.')
     @argument('-t', '--temperature', type=float, default=0.2, help='Temperature (to generate responses with).')
@@ -329,14 +328,14 @@ class Chatbook(Magics):
     @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
-    def palm(self, line, cell):
+    def gemini(self, line, cell):
         """
-        Google's PaLM magic for image generation by prompt.
+        Google's Gemini magic for image generation by prompt.
         For more details about the parameters see:
             https://developers.generativeai.google/api/python/google/generativeai/chat
         :return: LLM evaluation result.
         """
-        args = parse_argstring(self.palm, line)
+        args = parse_argstring(self.gemini, line)
         args = vars(args)
         args = {k: _unquote(v) for k, v in args.items()}
 
@@ -376,7 +375,7 @@ class Chatbook(Magics):
         if isinstance(args.get("api_key"), str):
             google.generativeai.configure(api_key=args.get("api_key"))
         else:
-            apiKey = os.environ.get("PALM_API_KEY")
+            apiKey = os.environ.get("GEMINI_API_KEY")
             google.generativeai.configure(api_key=apiKey)
 
         resObj = google.generativeai.chat(
