@@ -140,7 +140,8 @@ Here is a flowchart that summarizes the way chatbooks create and utilize LLM cha
 ```mermaid
 flowchart LR
     OpenAI{{OpenAI}}
-    PaLM{{PaLM}}
+    Gemini{{Gemini}}
+    Ollama{{Ollama}}
     LLMFunc[[LLMFunctions]]
     LLMProm[[LLMPrompts]]
     CODB[(Chat objects)]
@@ -178,8 +179,9 @@ flowchart LR
     subgraph LLM interaction
       COEval
       LLMFunc
-      PaLM
       OpenAI
+      Gemini
+      Ollama
     end
     CCell --> CIDQ
     CIDQ --> |yes| CIDEQ
@@ -200,7 +202,8 @@ flowchart LR
     CIDNone --> CIDEQ
     COEval -.- LLMFunc
     LLMFunc <-.-> OpenAI
-    LLMFunc <-.-> PaLM
+    LLMFunc <-.-> Gemini
+    LLMFunc <-.-> Ollama
 ```
 
 ------
@@ -317,7 +320,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
 ## TODO
 
 - [ ] TODO Implementation
-  - [X] DONE PalM chat cell
+  - [X] DONE PaLM chat cell
     - Obsoleted by Google
   - [X] DONE Gemini magic cell
     - Replacing the PaLM cell
