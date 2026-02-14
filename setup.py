@@ -28,7 +28,7 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
     ],
-    keywords=["llm", "llm prompt", "chat object", "chatbook", "magic", "magics", "jupyter", "notebook"],
+    keywords=["llm", "llm prompt", "chat object", "chatbook", "magic", "magics", "jupyter", "notebook", "chatgpt", "gemini", "ollama"],
     package_data={},
     python_requires='>=3.7',
 )
