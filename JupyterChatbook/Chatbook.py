@@ -313,7 +313,7 @@ class Chatbook(Magics):
     # Gemini
     # =====================================================
     @magic_arguments()
-    @argument('-m', '--model', type=str, default="models/gemini-2.5-flash", help='Model')
+    @argument('-m', '--model', type=str, default="gemini-2.5-flash", help='Model')
     @argument('-c', '--context', default=None,
               help='Text that should be provided to the model first, to ground the response.')
     @argument('-t', '--temperature', type=float, default=0.2, help='Temperature (to generate responses with).')
@@ -375,18 +375,26 @@ class Chatbook(Magics):
         if isinstance(args.get("api_key"), str):
             google.generativeai.configure(api_key=args.get("api_key"))
         else:
-            apiKey = os.environ.get("GEMINI_API_KEY")
+            apiKey = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
             google.generativeai.configure(api_key=apiKey)
 
-        resObj = google.generativeai.chat(
-            messages=cell,
-            model=args["model"],
-            context=context,
-            temperature=args["temperature"],
-            candidate_count=args["n"],
-            top_p=top_p,
-            top_k=top_k
-        )
+
+        model_name = args["model"]
+        if model_name.startswith("models/"):
+            model_name = f"models/{model_name}"
+
+        try:
+            resObj = google.generativeai.chat(
+                messages=cell,
+                model=model_name,
+                context=context,
+                temperature=args["temperature"],
+                candidate_count=args["n"],
+                top_p=top_p,
+                top_k=top_k
+            )
+        except Exception as e:
+            raise e
 
         if args["n"] == 1:
             res = resObj.last
