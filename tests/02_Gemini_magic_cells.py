@@ -12,7 +12,7 @@ class GeminiCellsTests(unittest.TestCase):
             "%%gemini" + """
             How many people live in Portugal?
             """,
-            "%%palm" + """
+            "%%ollama" + """
             Write a funny story in Russian
             """
         ]
