@@ -263,6 +263,9 @@ class Chatbook(Magics):
     @argument('-n', type=int, default=1, help="Number of generated responses.")
     @argument('--stop', default=None, help="Tokens that stop the generation when produced.")
     @argument('--max_tokens', default=None, help='Max number of tokens.')
+    @argument('--max_output_tokens', default=None, help='Max output tokens (GPT-5 models).')
+    @argument('--reasoning', default=None, help='Reasoning effort for GPT-5 models (e.g., low, medium, high).')
+    @argument('--verbosity', default=None, help='Verbosity for GPT-5 models (e.g., low, medium, high).')
     @argument('--response_format', type=str, default="values",
               help='LLM response format; one of "asis", "values", or "dict".')
     @argument('-f', '--format', type=str, default='pretty',
@@ -302,6 +305,24 @@ class Chatbook(Magics):
             elif isinstance(maxTokens, str):
                 maxTokens = int(maxTokens)
 
+        # Max output tokens (GPT-5)
+        maxOutputTokens = args.get("max_output_tokens")
+        if isinstance(maxOutputTokens, str):
+            if maxOutputTokens.lower() in ["none", "null"]:
+                maxOutputTokens = None
+            else:
+                maxOutputTokens = int(maxOutputTokens)
+
+        # Reasoning effort (GPT-5)
+        reasoningEffort = args.get("reasoning")
+        if isinstance(reasoningEffort, str) and reasoningEffort.lower() in ["none", "null", ""]:
+            reasoningEffort = None
+
+        # Verbosity (GPT-5)
+        verbosity = args.get("verbosity")
+        if isinstance(verbosity, str) and verbosity.lower() in ["none", "null", ""]:
+            verbosity = None
+
         # Response format
         resFormat = args.get("response_format", "values")
         if resFormat not in ["asis", "values", "dict"]:
@@ -311,34 +332,86 @@ class Chatbook(Magics):
 
         # API key
         if isinstance(args.get("api_key"), str):
-            openai.api_key = args["api_key"]
+            api_key = args["api_key"]
         else:
-            openai.api_key = os.getenv("OPENAI_API_KEY")
+            api_key = os.getenv("OPENAI_API_KEY")
 
-        if isinstance(args["top_p"], float):
-            res = openai.chat.completions.create(
-                model=args["model"],
-                messages=[{"role": "user", "content": cell}],
-                n=args["n"],
-                top_p=args["top_p"],
-                max_tokens=maxTokens,
-                stop=stopTokens
-            )
+        if api_key:
+            openai.api_key = api_key
+
+        if hasattr(openai, "OpenAI"):
+            client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
         else:
-            res = openai.chat.completions.create(
-                model=args["model"],
-                messages=[{"role": "user", "content": cell}],
-                n=args["n"],
-                temperature=args["temperature"],
-                max_tokens=maxTokens,
-                stop=stopTokens
-            )
+            client = openai
+
+        modelName = args["model"]
+        modelNameLower = modelName.lower() if isinstance(modelName, str) else ""
+        isGPT5 = modelNameLower.startswith("gpt-5")
+
+        if isGPT5:
+            params = {
+                "model": modelName,
+                "input": cell
+            }
+
+            if stopTokens:
+                params["stop"] = stopTokens
+            if maxOutputTokens is not None:
+                params["max_output_tokens"] = maxOutputTokens
+            if reasoningEffort:
+                params["reasoning"] = {"effort": reasoningEffort}
+            if verbosity:
+                params["text"] = {"verbosity": verbosity}
+
+            if hasattr(client, "responses"):
+                res = client.responses.create(**params)
+            elif hasattr(openai, "responses"):
+                res = openai.responses.create(**params)
+            else:
+                raise RuntimeError("OpenAI responses API is not available in the installed SDK.")
+        else:
+            params = {
+                "model": modelName,
+                "messages": [{"role": "user", "content": cell}],
+                "n": args["n"]
+            }
+
+            if isinstance(args["top_p"], float):
+                params["top_p"] = args["top_p"]
+            else:
+                params["temperature"] = args["temperature"]
+
+            if maxTokens is not None:
+                params["max_tokens"] = maxTokens
+            if stopTokens:
+                params["stop"] = stopTokens
+
+            if hasattr(client, "chat") and hasattr(client.chat, "completions"):
+                res = client.chat.completions.create(**params)
+            elif hasattr(client, "ChatCompletion"):
+                res = client.ChatCompletion.create(**params)
+            else:
+                raise RuntimeError("OpenAI chat completions API is not available in the installed SDK.")
 
         # Post process results
         if resFormat == "asis":
             new_cell = repr(res)
         elif resFormat in ["values", "value"]:
-            new_cell = "\n".join([x.message.content for x in res.choices])
+            if isGPT5:
+                if hasattr(res, "output_text"):
+                    new_cell = res.output_text
+                else:
+                    try:
+                        new_cell = "\n".join([
+                            chunk.get("text", "")
+                            for output in res.output
+                            for chunk in output.get("content", [])
+                            if chunk.get("type") in ["output_text", "text"]
+                        ])
+                    except Exception:
+                        new_cell = repr(res)
+            else:
+                new_cell = "\n".join([x.message.content for x in res.choices])
         else:
             new_cell = repr(res)
 
