@@ -309,6 +309,49 @@ Here is a screenshot:
 
 ![](https://raw.githubusercontent.com/antononcube/Python-JupyterChatbook/main/docs/img/Python-JupyterChatbok-teaser-raccoons.png)
 
+
+------
+
+## Automatic initialization
+
+Both initialization Python code and LLM personas can be automatically run and loaded respectively.
+
+### Init code
+
+The initialization Python code can be specified with the OS environmental variable `PYTHON_CHATBOOK_INIT_FILE`.
+
+If that variable is not set, the existence of the following files is verified in this order:
+
+1. "~/.config/python-chatbook/init.py"
+2. "~/.config/init.py"
+
+If an initialization file is found, an attempt is made to evaluate it. If the evaluation is successful,
+then the content of file is used to initialize the Jupyter session. (In addition to the code that is always used for initialization.)
+
+For example, see the file ["./resources/init.py"](./resources/init.py).
+
+### LLM personas
+
+The Jupyter session can have pre-loaded LLM personas (i.e. chat objects.)
+
+The LLM personas JSON file can be specified with the OS environmental variable `PYTHON_CHATBOOK_LLM_PERSONAS_CONF`.
+
+If that variable is not set, the existence of the following files is verified in this order:
+
+1. "~/.config/python-chatbook/llm-personas.json"
+2. "~/.config/llm-personas.json"
+
+Prompts from ["LLMPrompts"](https://github.com/antononcube/Python-packages/tree/main/LLMPrompts), [AAp2], can be used in that file.
+
+For example, see the file ["./resources/llm-personas.json"](./resources/llm-personas.json).
+
+The pre-loaded LLM personas (chat objects) can be verified with the magic cell:
+
+```
+%%chat_meta --all
+print
+```
+
 -------
 
 ## Implementation details
@@ -349,6 +392,8 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
       - [ ] `%%chat_meta`?
   - [X] DONE DALL-E image variations cell
     - Combined image variations and edits with `%%dalle`.
+  - [X] DONE Initialization code with "init.py"
+  - [X] DONE Pre-load of LLM-personas with "llm-personas.json" 
   - [ ] TODO Mermaid-JS cell
   - [ ] TODO ProdGDT cell
   - [ ] MAYBE DeepL cell
