@@ -22,8 +22,8 @@ The Chatbook extension provides the cell magics:
 - `%%chat`
 - `%%chat_meta`
 
-The first three are for "shallow" access of the corresponding LLM services.
-The 4th one is the most important -- allows contextual, multi-cell interactions with LLMs.
+The first four are for "shallow" access of the corresponding LLM services.
+The 5th one is the most important -- allows contextual, multi-cell interactions with LLMs.
 The last one is for managing the chat objects created in a notebook session.
 
 **Remark:** The chatbook LLM cells use the packages 
@@ -34,8 +34,11 @@ and ["google-generativeai"](https://pypi.org/project/google-generativeai/), [GAI
 using the package ["pyperclip"](https://pypi.org/project/pyperclip/), [ASp1].
 
 **Remark:** The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken 
-from the Operating System (OS) environmental variables `OPENAI_API_KEY` and `GEMINI_API_KEY`. 
+from the Operating System (OS) environmental variables `OPENAI_API_KEY`, `GEMINI_API_KEY`, and `OLLAMA_API_KEY`. 
 (See below the setup section for LLM services access.)
+
+**Remark:** The Ollama magic cells also uses the environmental variables `OLLAMA_HOST` and `OLLAMA_MODEL`.
+Of course, if Ollama is run locally then `OLLAMA_API_KEY` is not needed.
 
 Here is a couple of movies [AAv2, AAv3] that provide quick introductions to the features:
 - ["Jupyter Chatbook LLM cells demo (Python)"](https://youtu.be/WN3N-K_Xzz8), (4.8 min)
@@ -62,7 +65,7 @@ pip install JupyterChatbook
 ## Setup LLM services access
 
 The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
-rom the Operating System (OS) environmental variables`OPENAI_API_KEY` and `GEMINI_API_KEY`. 
+rom the Operating System (OS) environmental variables`OPENAI_API_KEY`, `GEMINI_API_KEY`, and `OLLAMA_API_KEY`. 
 (For example, set in the "~/.zshrc" file in macOS.)
 
 One way to set those environmental variables in a notebook session is to use the `%env` line magic. For example:
@@ -75,8 +78,9 @@ Another way is to use Python code. For example:
 
 ```
 import os
+os.environ['OPENAI_API_KEY'] = '<YOUR OPENAI API KEY>'
 os.environ['GEMINI_API_KEY'] = '<YOUR GEMINI API KEY>'
-os.environ['OPEN_API_KEY'] = '<YOUR OPEN API KEY>'
+os.environ['OLLAMA_API_KEY'] = '<YOUR OLLAMA API KEY>'
 ```
 
 -------
