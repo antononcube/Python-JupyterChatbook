@@ -163,17 +163,44 @@ def _ollama_url(host, path):
     return f"{host}{path}"
 
 
-def _ollama_request_json(url, payload=None, timeout=60):
+def _ollama_request_json(url, payload=None, timeout=60, headers=None):
     if payload is None:
         req = urllib.request.Request(url, method="GET")
     else:
         body = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(url, data=body, method="POST")
         req.add_header("Content-Type", "application/json")
+    if isinstance(headers, dict) and headers:
+        for k, v in headers.items():
+            if k and v:
+                req.add_header(k, v)
 
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = resp.read()
     return json.loads(data.decode("utf-8"))
+
+
+def _is_ollama_cloud_model(model):
+    if not isinstance(model, str):
+        return False
+    m = model.strip().lower()
+    if not m:
+        return False
+    return (
+        m.endswith("-cloud")
+        or m.endswith(":cloud")
+        or m.startswith("ollama_cloud/")
+        or "/cloud" in m
+    )
+
+
+def _is_ollama_cloud_host(host):
+    if not isinstance(host, str):
+        return False
+    h = host.strip().lower()
+    if not h:
+        return False
+    return "ollama.com" in h
 
 
 def _ollama_get_models(host):
@@ -192,7 +219,8 @@ def _ollama_get_models(host):
 
 @magics_class
 class Chatbook(Magics):
-    chatObjects = {"NONE": llm_chat('', llm_evaluator='ChatGPT')}
+    # Lazily create chat objects to avoid importing/initializing LLM clients at import time.
+    chatObjects = {}
     dallE2Sizes = {"small": "256x256", "medium": "512x512", "large": "1024x1024",
                    "256": "256x256", "512": "512x512", "104": "1024x1024", "default": "256x256", }
     dallE3Sizes = {"square": "1024x1024", "landscape": "1792x1024", "portrait": "1024x1792",
@@ -576,7 +604,7 @@ class Chatbook(Magics):
     @argument('-m', '--model', type=str, default=None,
               help='Model (if omitted, the first available model is used).')
     @argument('--host', type=str, default=None,
-              help='Ollama server URL. Defaults to $OLLAMA_HOST or http://localhost:11434.')
+              help='Ollama server URL. Defaults to OLLAMA_HOST or http://localhost:11434.')
     @argument('-t', '--temperature', type=float, default=0.7, help='Temperature (to generate responses with).')
     @argument('--top_p', default=None, help='Top probability mass.')
     @argument('--top_k', default=None, help='Top-K sampling.')
@@ -586,6 +614,7 @@ class Chatbook(Magics):
               help='LLM response format; one of "asis", "values", or "dict".')
     @argument('-f', '--format', type=str, default='pretty',
               help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
+    @argument('--api_key', default=None, help="API key to access the Ollama cloud LLM service.")
     @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -648,11 +677,27 @@ class Chatbook(Magics):
         host = args.get("host") or os.environ.get("OLLAMA_HOST") or "http://localhost:11434"
         model = args.get("model") or os.environ.get("OLLAMA_MODEL")
         if model is None or len(str(model).strip()) == 0:
-            models = _ollama_get_models(host)
+            models = [x for x in _ollama_get_models(host) if 'cloud' not in x]
             if len(models) > 0:
                 model = models[0]
             else:
                 model = "llama3"
+
+        # It is somewhat of an overkill to have all these checks, but "less surprises"
+        cloud_model = _is_ollama_cloud_model(model)
+        cloud_host = _is_ollama_cloud_host(host)
+        cloud_usage = cloud_model or cloud_host
+
+        # API key handling
+        api_key_arg = args.get("api_key")
+        api_key = None
+        if isinstance(api_key_arg, str) and api_key_arg.strip():
+            if api_key_arg == "OLLAMA_API_KEY":
+                api_key = os.environ.get("OLLAMA_API_KEY")
+            else:
+                api_key = api_key_arg
+        if (api_key is None or len(str(api_key).strip()) == 0) and cloud_usage:
+            api_key = os.environ.get("OLLAMA_API_KEY")
 
         options = {}
         if args.get("temperature") is not None:
@@ -675,7 +720,15 @@ class Chatbook(Magics):
             payload["options"] = options
 
         try:
-            resObj = _ollama_request_json(_ollama_url(host, "/api/generate"), payload=payload)
+            headers = None
+            if isinstance(api_key, str) and api_key.strip() and (cloud_usage or api_key_arg is not None):
+                print('HERE')
+                headers = {"Authorization": f"Bearer {api_key}"}
+            resObj = _ollama_request_json(
+                _ollama_url(host, "/api/generate"),
+                payload=payload,
+                headers=headers
+            )
             res = resObj.get("response", "")
         except Exception as e:
             resObj = {"error": str(e)}
