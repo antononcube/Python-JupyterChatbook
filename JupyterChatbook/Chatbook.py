@@ -6,7 +6,7 @@ from LLMFunctionObjects import llm_configuration, llm_evaluator, llm_chat
 from LLMPrompts import llm_prompt_expand
 import json
 import openai
-import google.generativeai
+from google import genai
 import os
 import pyperclip
 import IPython
@@ -578,9 +578,9 @@ class Chatbook(Magics):
     @cell_magic
     def gemini(self, line, cell):
         """
-        Google's Gemini magic for image generation by prompt.
+        Google's Gemini magic for text generation by prompt.
         For more details about the parameters see:
-            https://developers.generativeai.google/api/python/google/generativeai/chat
+            https://googleapis.github.io/python-genai/
         :return: LLM evaluation result.
         """
         args = parse_argstring(self.gemini, line)
@@ -620,41 +620,56 @@ class Chatbook(Magics):
             resFormat = "json"
 
         # API key
-        if isinstance(args.get("api_key"), str):
-            google.generativeai.configure(api_key=args.get("api_key"))
-        else:
-            apiKey = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-            google.generativeai.configure(api_key=apiKey)
-
+        api_key = args.get("api_key")
+        if not isinstance(api_key, str) or len(api_key.strip()) == 0:
+            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
         model_name = args["model"]
-        if model_name.startswith("models/"):
+        if not model_name.startswith("models/"):
             model_name = f"models/{model_name}"
 
         try:
-            resObj = google.generativeai.chat(
-                messages=cell,
+            client = genai.Client(api_key=api_key)
+            prompt = cell if context is None else context + "\n\n" + cell
+            config = {
+                "temperature": args["temperature"],
+                "candidate_count": args["n"],
+                "top_p": top_p,
+                "top_k": top_k,
+            }
+            config = {k: v for k, v in config.items() if v is not None}
+            resObj = client.models.generate_content(
                 model=model_name,
-                context=context,
-                temperature=args["temperature"],
-                candidate_count=args["n"],
-                top_p=top_p,
-                top_k=top_k
+                contents=prompt,
+                config=config
             )
         except Exception as e:
             raise e
 
         if args["n"] == 1:
-            res = resObj.last
+            res = resObj.text
+            if res is None:
+                res = ""
         else:
-            res = [x["content"] for x in resObj.candidates]
-            res = str(res)
+            candidates = []
+            for candidate in (resObj.candidates or []):
+                text_parts = []
+                for part in getattr(candidate.content, "parts", []) or []:
+                    part_text = getattr(part, "text", None)
+                    if isinstance(part_text, str):
+                        text_parts.append(part_text)
+                if len(text_parts) > 0:
+                    candidates.append("".join(text_parts))
+            res = candidates
 
         # Post process results
         if resFormat == "asis":
             new_cell = repr(resObj)
         elif resFormat in ["values", "value"]:
-            new_cell = res
+            if isinstance(res, list):
+                new_cell = str(res)
+            else:
+                new_cell = res
         else:
             new_cell = repr(resObj)
 
