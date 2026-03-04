@@ -928,6 +928,7 @@ class Chatbook(Magics):
               help="Should the cell content be considered as prompt or not?")
     @argument('-c', '--conf', default='ChatGPT', type=str,
               help="Configuration to use for creating a chat object. (If --prompt is True.)")
+    @argument('-m', '--model', type=str, default="", help='Model')
     @argument('--base_url', type=str, default=None, help="URL of the LLM service.")
     @argument('--all', action="store_true",
               help="Should the operation(s) be applied to all chat objects or not?")
@@ -948,12 +949,24 @@ class Chatbook(Magics):
         if args.get("prompt", False):
             prompt_spec = cell.strip()
             prompt_spec = llm_prompt_expand(prompt_spec, messages=[], sep="\n")
+
+            # Model
+            model_spec = _unquote(args.get("model", ""))
+
+            # Make LLM configuration
             conf_args = {}
+            if len(model_spec.strip()) > 0:
+                conf_args["model"] = model_spec
             if args.get("base_url") is not None:
                 conf_args["base_url"] = args["base_url"]
+
             conf = llm_configuration(_unquote(args["conf"]), **conf_args)
+
+            # Chat object
             chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(conf))
             self.chatObjects[chatID] = chatObj
+
+            # Proclaim
             new_cell = f"Created new chat object with id: ⎡{chatID}⎦\nPrompt: ⎡{prompt_spec}⎦"
         elif not applyToAllQ and chatID not in self.chatObjects:
             new_cell = f"Unknown chat object id: {chatID}."
