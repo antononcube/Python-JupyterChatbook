@@ -28,7 +28,7 @@ The last one is for managing the chat objects created in a notebook session.
 
 **Remark:** The chatbook LLM cells use the packages 
 ["openai"](https://pypi.org/project/openai/), [OAIp2], 
-and ["google-generativeai"](https://pypi.org/project/google-generativeai/), [GAIp1].
+and ["google-genai"](https://pypi.org/project/google-genai/), [GAIp1].
 
 **Remark:** The results of the LLM cells are automatically copied to the clipboard
 using the package ["pyperclip"](https://pypi.org/project/pyperclip/), [ASp1].
@@ -445,7 +445,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
 [PyPI.org/AlSweigart](https://pypi.org/user/AlSweigart/).
 
 [GAIp1] Google AI,
-[google-generativeai (Google Generative AI Python Client)](https://pypi.org/project/google-generativeai/),
+[google-genai (Google Gen AI Python SDK)](https://pypi.org/project/google-genai/),
 (2023),
 [PyPI.org/google-ai](https://pypi.org/user/google-ai/).
 
@@ -470,4 +470,3 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
 ["Jupyter Chatbook multi cell LLM chats teaser (Python)"](https://www.youtube.com/watch?v=8pv0QRGc7Rw),
 (2023),
 [YouTube/@AAA4Prediction](https://www.youtube.com/@AAA4prediction).
-
