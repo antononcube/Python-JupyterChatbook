@@ -836,6 +836,7 @@ class Chatbook(Magics):
     @argument('--max_tokens', type=int, help="Max number of tokens for the LLM response.")
     @argument('--temperature', type=float, help="Temperature to use.")
     @argument('--api_key', type=str, help="API key to access the LLM service.")
+    @argument('--base_url', type=str, default=None, help="URL of the LLM service.")
     @argument('--echo', type=bool, default=False, help="Should the LLM evaluation steps be echoed or not?")
     @argument('-f', '--format', type=str, default='pretty',
               help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
@@ -873,6 +874,8 @@ class Chatbook(Magics):
                 conf_args["max_tokens"] = args["max_tokens"]
             if args.get("temperature") is not None:
                 conf_args["temperature"] = args["temperature"]
+            if args.get("base_url") is not None:
+                conf_args["base_url"] = args["base_url"]
             conf_spec = llm_configuration(_unquote(args["conf"]), **conf_args)
 
             # Create the chat object
@@ -908,6 +911,7 @@ class Chatbook(Magics):
               help="Should the cell content be considered as prompt or not?")
     @argument('-c', '--conf', default='ChatGPT', type=str,
               help="Configuration to use for creating a chat object. (If --prompt is True.)")
+    @argument('--base_url', type=str, default=None, help="URL of the LLM service.")
     @argument('--all', action="store_true",
               help="Should the operation(s) be applied to all chat objects or not?")
     @cell_magic
@@ -927,7 +931,11 @@ class Chatbook(Magics):
         if args.get("prompt", False):
             prompt_spec = cell.strip()
             prompt_spec = llm_prompt_expand(prompt_spec, messages=[], sep="\n")
-            chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(_unquote(args["conf"])))
+            conf_args = {}
+            if args.get("base_url") is not None:
+                conf_args["base_url"] = args["base_url"]
+            conf = llm_configuration(_unquote(args["conf"]), **conf_args)
+            chatObj = llm_chat(prompt_spec, llm_evaluator=llm_evaluator(conf))
             self.chatObjects[chatID] = chatObj
             new_cell = f"Created new chat object with id: ⎡{chatID}⎦\nPrompt: ⎡{prompt_spec}⎦"
         elif not applyToAllQ and chatID not in self.chatObjects:
