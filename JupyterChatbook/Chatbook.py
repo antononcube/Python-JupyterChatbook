@@ -850,7 +850,7 @@ class Chatbook(Magics):
     @argument('--prompt', type=str, default="", help="LLM prompt.")
     @argument('--max_tokens', type=int, help="Max number of tokens for the LLM response.")
     @argument('--temperature', type=float, help="Temperature to use.")
-    @argument('--api_key', type=str, help="API key to access the LLM service.")
+    @argument('--api_key', type=str, default=None, help="API key to access the LLM service.")
     @argument('--base_url', type=str, default=None, help="URL of the LLM service.")
     @argument('--echo', type=bool, default=False, help="Should the LLM evaluation steps be echoed or not?")
     @argument('-f', '--format', type=str, default='pretty',
@@ -889,6 +889,8 @@ class Chatbook(Magics):
                 conf_args["max_tokens"] = args["max_tokens"]
             if args.get("temperature") is not None:
                 conf_args["temperature"] = args["temperature"]
+            if args.get("api_key") is not None:
+                conf_args["api_key"] = args["api_key"]
             if args.get("base_url") is not None:
                 conf_args["base_url"] = args["base_url"]
             conf_spec = llm_configuration(_unquote(args["conf"]), **conf_args)
