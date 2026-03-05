@@ -716,6 +716,7 @@ class Chatbook(Magics):
     @argument('-f', '--format', type=str, default='pretty',
               help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
     @argument('--api_key', default=None, help="API key to access the Ollama cloud LLM service.")
+    @argument('--base_url', type=str, default=None, help="URL of the LLM service.")
     @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -775,7 +776,7 @@ class Chatbook(Magics):
             resFormat = "json"
 
         # Host and model
-        host = args.get("host") or os.environ.get("OLLAMA_HOST") or "http://localhost:11434"
+        host = args.get("host") or args.get("base_url") or os.environ.get("OLLAMA_HOST") or "http://localhost:11434"
         model = args.get("model") or os.environ.get("OLLAMA_MODEL")
         if model is None or len(str(model).strip()) == 0:
             models = [x for x in _ollama_get_models(host) if 'cloud' not in x]
@@ -823,7 +824,6 @@ class Chatbook(Magics):
         try:
             headers = None
             if isinstance(api_key, str) and api_key.strip() and (cloud_usage or api_key_arg is not None):
-                print('HERE')
                 headers = {"Authorization": f"Bearer {api_key}"}
             resObj = _ollama_request_json(
                 _ollama_url(host, "/api/generate"),
