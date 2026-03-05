@@ -241,6 +241,7 @@ class Chatbook(Magics):
     @argument('-f', '--format', type=str, default='pretty',
               help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
     @argument('--api_key', default=None, help="API key to access the LLM service")
+    @argument('--base_url', type=str, default=None, help="URL of the LLM service.")
     @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -271,6 +272,7 @@ class Chatbook(Magics):
     @argument('-f', '--format', type=str, default='pretty',
               help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
     @argument('--api_key', default=None, help="API key to access the LLM service.")
+    @argument('--base_url', type=str, default=None, help="URL of the LLM service.")
     @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
@@ -339,11 +341,22 @@ class Chatbook(Magics):
         if api_key:
             openai.api_key = api_key
 
+        # Base URL
+        base_url = None
+        if isinstance(args.get("base_url"), str) and args.get("base_url").strip():
+            base_url = args["base_url"]
+
+        # Client
         if hasattr(openai, "OpenAI"):
-            client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
+            if base_url is None:
+                client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
+            else:
+                client = openai.OpenAI(api_key=api_key, base_url = base_url) if api_key else openai.OpenAI(base_url = base_url)
         else:
             client = openai
 
+
+        # Parameters
         modelName = args["model"]
         modelNameLower = modelName.lower() if isinstance(modelName, str) else ""
         isGPT5 = modelNameLower.startswith("gpt-5")
