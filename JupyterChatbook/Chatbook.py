@@ -88,7 +88,7 @@ def _register_personas(personas, target=None):
 
         conf_name = spec.get("conf") or spec.get("configuration") or "ChatGPT"
         conf_args = {}
-        for key in ["model", "max_tokens", "temperature"]:
+        for key in ["model", "max_tokens", "temperature", "base_url"]:
             if spec.get(key) is not None:
                 conf_args[key] = spec[key]
         conf_spec = llm_configuration(_unquote(conf_name), **conf_args)
