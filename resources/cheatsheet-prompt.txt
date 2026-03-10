@@ -1,0 +1,8 @@
+Look into the files: "./README.md" and "./JupyterChatbook/Chatbook.py" and make a Markdown document "./docs/Cheatsheet.md" that is cheatsheet for using the Python "JupyterChatbook" extension.
+The cheatsheet should cover:
+- New LLM persona initialization
+- Notebook-wide chat with an LLM persona
+- Management of LLM personas: query or deletion of single one, or querying all
+- Regular chat cells vs direct LLM-provider cells
+- LLM provider access facilitation
+- Notebook/chatbook session initialization with custom code and JSON spec of LLM personas
