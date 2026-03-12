@@ -2,7 +2,8 @@
 
 ***March 12, 2026***
 
-Quick reference for the Python Jupyter extension ["JupyterChatbook"](https://pypi.org/project/JupyterChatbook/). ([PyPI.org](https://pypi.org/project/JupyterChatbook), [GitHub](https://github.com/antononcube/Python-JupyterChatbook).)
+Quick reference for the Python Jupyter extension ["JupyterChatbook"](https://pypi.org/project/JupyterChatbook/). 
+(Links: [PyPI.org](https://pypi.org/project/JupyterChatbook), [GitHub](https://github.com/antononcube/Python-JupyterChatbook), [notebook](https://github.com/antononcube/Python-JupyterChatbook/blob/main/docs/Cheatsheet.ipynb).)
 
 ---
 
