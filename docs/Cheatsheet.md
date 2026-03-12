@@ -1,6 +1,6 @@
 # [JupyterChatbook](https://pypi.org/project/JupyterChatbook/) Cheatsheet
 
-***March 2026***
+***March 12, 2026***
 
 Quick reference for the Python Jupyter extension ["JupyterChatbook"](https://pypi.org/project/JupyterChatbook/). ([PyPI.org](https://pypi.org/project/JupyterChatbook), [GitHub](https://github.com/antononcube/Python-JupyterChatbook).)
 
