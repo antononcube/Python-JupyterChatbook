@@ -699,6 +699,82 @@ class Chatbook(Magics):
         return new_cell
 
     # =====================================================
+    # xAI
+    # =====================================================
+    @magic_arguments()
+    @argument('-m', '--model', type=str, default="grok-3-mini", help='Model')
+    @argument('-c', '--context', default=None,
+              help='System instruction that should be provided to the model first.')
+    @argument('-t', '--temperature', type=float, default=0.7,
+              help='Temperature (to generate responses with).')
+    @argument('--top_p', default=None, help='Top probability mass.')
+    @argument('--max_tokens', default=None, help='Max number of output tokens.')
+    @argument('--stop', default=None, help='Tokens that stop the generation when produced.')
+    @argument('--response_format', type=str, default="values",
+              help='LLM response format; one of "asis", "values", or "dict".')
+    @argument('-f', '--format', type=str, default='pretty',
+              help="Format to display the result with; one of 'asis', 'html', 'markdown', or 'pretty'.")
+    @argument('--api_key', default=None, help="API key to access the xAI service.")
+    @argument('--no_clipboard', action="store_true",
+              help="Should the result be copied to the clipboard or not?")
+    @cell_magic
+    def xai(self, line, cell):
+        """xAI Grok magic for text generation by prompt."""
+        args = parse_argstring(self.xai, line)
+        args = {k: _unquote(v) for k, v in vars(args).items()}
+
+        try:
+            from xai_sdk import Client
+            from xai_sdk.chat import system, user
+        except ImportError as e:
+            raise ImportError(
+                "The %%xai magic requires the 'xai-sdk' package. "
+                "Install it with: pip install xai-sdk"
+            ) from e
+
+        api_key = args.get("api_key")
+        if not isinstance(api_key, str) or not api_key.strip():
+            api_key = os.environ.get("XAI_API_KEY")
+        client = Client(api_key=api_key)
+
+        create_args = {"model": args["model"], "temperature": args["temperature"]}
+        if args.get("top_p") is not None:
+            create_args["top_p"] = float(args["top_p"])
+        if args.get("max_tokens") is not None:
+            max_tokens = args["max_tokens"]
+            if str(max_tokens).lower() not in ["none", "null"]:
+                create_args["max_tokens"] = int(max_tokens)
+        stop_tokens = args.get("stop")
+        if stop_tokens:
+            if isinstance(stop_tokens, str) and stop_tokens.startswith("[") and stop_tokens.endswith("]"):
+                stop_tokens = [_unquote(x.strip()) for x in stop_tokens[1:-1].split(",")]
+            elif isinstance(stop_tokens, str):
+                stop_tokens = [stop_tokens]
+            create_args["stop"] = stop_tokens
+
+        chat = client.chat.create(**create_args)
+        context = args.get("context")
+        if isinstance(context, str) and context.strip():
+            chat.append(system(context))
+        chat.append(user(cell))
+        response = chat.sample()
+        response_text = getattr(response, "content", None)
+        if response_text is None:
+            response_text = str(response)
+
+        res_format = args.get("response_format", "values")
+        if res_format == "asis":
+            new_cell = repr(response)
+        elif res_format in ["values", "value"]:
+            new_cell = response_text
+        else:
+            new_cell = repr(response)
+
+        if not args.get("no_clipboard", False):
+            pyperclip.copy(str(new_cell))
+        return _prep_result(new_cell, args["format"].lower())
+
+    # =====================================================
     # Ollama
     # =====================================================
     @magic_arguments()
