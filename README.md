@@ -18,6 +18,7 @@ The Chatbook extension provides the cell magics:
 - `%%chatgpt` (and the synonym `%%openai`)
 - `%%gemini`
 - `%%xai`
+- `%%xai-images`
 - `%%ollama`
 - `%%dalle`
 - `%%chat`

@@ -774,6 +774,63 @@ class Chatbook(Magics):
             pyperclip.copy(str(new_cell))
         return _prep_result(new_cell, args["format"].lower())
 
+    @magic_arguments()
+    @argument('-m', '--model', type=str, default="grok-imagine-image",
+              help='Image generation model.')
+    @argument('--resolution', type=str, default="1k",
+              help='Image resolution, such as 1k or 2k.')
+    @argument('--aspect_ratio', type=str, default="1:1",
+              help='Image aspect ratio, such as 16:9.')
+    @argument('--api_key', default=None, help="API key to access the xAI service.")
+    @argument('--no_clipboard', action="store_true",
+              help="Should the generated image URL be copied to the clipboard or not?")
+    @cell_magic
+    def xai_images(self, line, cell):
+        """xAI image generation magic for a prompt in the cell body."""
+        # Also accept the compact form: model=..., resolution=..., aspect_ratio=...
+        normalized_line = line.replace(",", " ")
+        if "=" in normalized_line and not normalized_line.lstrip().startswith("-"):
+            parts = []
+            for item in line.split(","):
+                item = item.strip()
+                if not item:
+                    continue
+                key, value = item.split("=", 1)
+                parts.extend([f"--{key.strip().lstrip('-')}", value.strip()])
+            normalized_line = " ".join(parts)
+
+        args = parse_argstring(self.xai_images, normalized_line)
+        args = {k: _unquote(v) for k, v in vars(args).items()}
+
+        try:
+            from xai_sdk import Client
+        except ImportError as e:
+            raise ImportError(
+                "The %%xai-images magic requires the 'xai-sdk' package. "
+                "Install it with: pip install xai-sdk"
+            ) from e
+
+        api_key = args.get("api_key")
+        if not isinstance(api_key, str) or not api_key.strip():
+            api_key = os.environ.get("XAI_API_KEY")
+        client = Client(api_key=api_key)
+        response = client.image.sample(
+            model=args["model"],
+            prompt=cell,
+            resolution=args["resolution"],
+            aspect_ratio=args["aspect_ratio"]
+        )
+
+        image_url = getattr(response, "url", None)
+        if image_url is None and isinstance(response, dict):
+            image_url = response.get("url")
+        if not image_url:
+            raise RuntimeError("xAI image generation returned no image URL.")
+
+        if not args.get("no_clipboard", False):
+            pyperclip.copy(str(image_url))
+        return display.Image(url=image_url)
+
     # =====================================================
     # Ollama
     # =====================================================
