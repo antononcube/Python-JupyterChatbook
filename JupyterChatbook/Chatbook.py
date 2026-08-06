@@ -814,6 +814,10 @@ class Chatbook(Magics):
               help='Image resolution, such as 1k or 2k.')
     @argument('--aspect_ratio', type=str, default="1:1",
               help='Image aspect ratio, such as 16:9.')
+    @argument('-n', type=int, default=1,
+              help='Number of images.')
+    @argument('-f', '--image_format', '--response_format', dest='image_format', type=str, default="url",
+              help='Image format: url or base64.')
     @argument('--api_key', default=None, help="API key to access the xAI service.")
     @argument('--no_clipboard', action="store_true",
               help="Should the generated image URL be copied to the clipboard or not?")
@@ -846,23 +850,68 @@ class Chatbook(Magics):
         api_key = args.get("api_key")
         if not isinstance(api_key, str) or not api_key.strip():
             api_key = os.environ.get("XAI_API_KEY")
+        image_format = args.get("image_format", "url")
+        if image_format == "b64_json":
+            image_format = "base64"
+        if image_format not in ["url", "base64"]:
+            raise ValueError("The image_format argument must be 'url' or 'base64'.")
+        number_of_images = args.get("n", 1)
+        if number_of_images < 1:
+            raise ValueError("The n argument must be a positive integer.")
         client = Client(api_key=api_key)
-        response = client.image.sample(
-            model=args["model"],
-            prompt=cell,
-            resolution=args["resolution"],
-            aspect_ratio=args["aspect_ratio"]
-        )
+        image_args = {
+            "model": args["model"],
+            "prompt": cell,
+            "resolution": args["resolution"],
+            "aspect_ratio": args["aspect_ratio"],
+            "image_format": image_format
+        }
+        if number_of_images > 1:
+            image_args["n"] = number_of_images
+            response = client.image.sample_batch(**image_args)
+        else:
+            response = client.image.sample(**image_args)
 
-        image_url = getattr(response, "url", None)
-        if image_url is None and isinstance(response, dict):
-            image_url = response.get("url")
-        if not image_url:
-            raise RuntimeError("xAI image generation returned no image URL.")
+        responses = response if isinstance(response, (list, tuple)) else None
+        if responses is None:
+            responses = getattr(response, "images", None)
+        if responses is None:
+            responses = getattr(response, "data", None)
+        if responses is None:
+            responses = [response]
 
+        if image_format == "url":
+            image_urls = []
+            for image_response in responses:
+                image_url = getattr(image_response, "url", None)
+                if image_url is None and isinstance(image_response, dict):
+                    image_url = image_response.get("url")
+                if image_url:
+                    image_urls.append(image_url)
+            if not image_urls:
+                raise RuntimeError("xAI image generation returned no image URL.")
+            if not args.get("no_clipboard", False):
+                pyperclip.copy(str(image_urls[0] if len(image_urls) == 1 else image_urls))
+            return _prep_result("".join(f'<img src="{url}" />' for url in image_urls), "html")
+
+        image_data_values = []
+        for image_response in responses:
+            image_data = getattr(image_response, "base64", None) or getattr(image_response, "b64_json", None)
+            if image_data is None and isinstance(image_response, dict):
+                image_data = image_response.get("base64") or image_response.get("b64_json")
+            if image_data:
+                image_data_values.append(image_data)
+        if not image_data_values:
+            raise RuntimeError("xAI image generation returned no base64 image data.")
         if not args.get("no_clipboard", False):
-            pyperclip.copy(str(image_url))
-        return display.Image(url=image_url)
+            pyperclip.copy(str(image_data_values[0] if len(image_data_values) == 1 else image_data_values))
+        image_tags = []
+        for image_data in image_data_values:
+            image_source = image_data if str(image_data).startswith("data:") else (
+                f"data:image/png;base64,{image_data}"
+            )
+            image_tags.append(f'<img src="{image_source}" />')
+        return _prep_result("".join(image_tags), "html")
 
     # =====================================================
     # Ollama

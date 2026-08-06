@@ -243,6 +243,9 @@ Explain this concept in three concise paragraphs.
 A cinematic mountain landscape at sunrise.
 ```
 
+Use `--image_format base64` for a base64 image response; the default is
+`--image_format url`.
+
 ```python
 %%ollama --model gemma3:1b --format markdown
 Give me three Linux troubleshooting tips. VERY CONCISE.
