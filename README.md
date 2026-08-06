@@ -18,9 +18,9 @@ The Chatbook extension provides the cell magics:
 - `%%chatgpt` (and the synonym `%%openai`)
 - `%%gemini`
 - `%%xai`
-- `%%xai-images`
+- `%%xai_images`
 - `%%ollama`
-- `%%dalle`
+- `%%openai_images`
 - `%%chat`
 - `%%chat_meta`
 
@@ -379,7 +379,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
   - [ ] TODO Using ["pyperclip"](https://pypi.org/project/pyperclip/)
     - [X] DONE Basic
       - [X] `%%chatgpt`
-      - [X] `%%dalle`
+      - [X] `%%openai_images`
       - [X] `%%palm`
       - [X] `%%chat`
       - [X] `%%gemini`
@@ -400,7 +400,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
       - [X] `%%xai`
       - [ ] `%%chat_meta`?
   - [X] DONE DALL-E image variations cell
-    - Combined image variations and edits with `%%dalle`.
+    - Combined image variations and edits with `%%openai_images`.
   - [X] DONE Initialization code with "init.py"
   - [X] DONE Pre-load of LLM-personas with "llm-personas.json" 
   - [ ] TODO Mermaid-JS cell

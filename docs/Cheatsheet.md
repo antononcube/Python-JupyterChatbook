@@ -214,7 +214,7 @@ delete
 - Backend chosen with `--conf` (default: `ChatGPT`).
 
 
-### Direct provider cells (`%%chatgpt`, `%%openai`, `%%gemini`, `%%xai`, `%%ollama`, `%%dalle`)
+### Direct provider cells (`%%chatgpt`, `%%openai`, `%%gemini`, `%%xai`, `%%xai_images`, `%%ollama`, `%%openai_images`)
 
 - Direct single-call access to provider APIs.
 - Useful for explicit provider/model control.
@@ -239,12 +239,27 @@ Explain this concept in three concise paragraphs.
 ```
 
 ```python
+%%xai_images model=grok-imagine-image-quality, resolution=2k, aspect_ratio='16:9'
+A cinematic mountain landscape at sunrise.
+```
+
+```python
 %%ollama --model gemma3:1b --format markdown
 Give me three Linux troubleshooting tips. VERY CONCISE.
 ```
 
 ```python
-%%dalle --model dall-e-3 --size landscape
+%%openai_images --model dall-e-3 --size landscape
+A dark-mode screensaver digital painting of a lighthouse in stormy weather.
+```
+
+For `gpt-image-*` models, use the model-specific options:
+
+The size aliases `square`, `portrait`, and `landscape` map to `1024x1024`,
+`1024x1536`, and `1536x1024`, respectively.
+
+```python
+%%openai_images --model gpt-image-1 --size landscape --quality high --background transparent --output_format png
 A dark-mode screensaver digital painting of a lighthouse in stormy weather.
 ```
 

@@ -6,7 +6,7 @@ from .Chatbook import Chatbook, initialize_chatbook
 
 def load_ipython_extension(ipython):
     magics = ipython.register_magics(Chatbook)
-    xai_images = ipython.magics_manager.magics["cell"].get("xai_images")
-    if xai_images is not None:
-        ipython.register_magic_function(xai_images, magic_kind="cell", magic_name="xai-images")
+    openai_images = ipython.magics_manager.magics["cell"].get("openai_images")
+    if openai_images is not None:
+        ipython.register_magic_function(openai_images, magic_kind="cell", magic_name="dalle")
     initialize_chatbook(ipython, chatbook=magics)

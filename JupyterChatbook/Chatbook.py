@@ -225,6 +225,7 @@ class Chatbook(Magics):
                    "256": "256x256", "512": "512x512", "104": "1024x1024", "default": "256x256", }
     dallE3Sizes = {"square": "1024x1024", "landscape": "1792x1024", "portrait": "1024x1792",
                    "1024": "1024x1024", "default": "1024x1024"}
+    gptImageSizes = {"square": "1024x1024", "portrait": "1024x1536", "landscape": "1536x1024"}
 
     # =====================================================
     # OpenAI
@@ -441,26 +442,36 @@ class Chatbook(Magics):
         return new_cell
 
     # =====================================================
-    # DALL-E
+    # OpenAI Images
     # =====================================================
     @magic_arguments()
     @argument('-m', '--model', type=str, default="dall-e-2", help='Model')
-    @argument('-s', '--size', type=str, default="small", help="Size of the generated image.")
+    @argument('-s', '--size', type=str, default=None, help="Size of the generated image.")
     @argument('-n', type=int, default=1, help="Number of generated images.")
     @argument('--prompt', type=str, default="", help="Prompt (image edit is used if not an empty string.)")
     @argument('--mask', type=str, default="", help="File name of a mask image")
     @argument('-f', '--response_format', type=str, default="b64_json", help='Format, one of "url" or "b64_json".')
+    @argument('--quality', type=str, default=None,
+              help='Quality for gpt-image models: auto, low, medium, or high.')
+    @argument('--background', type=str, default=None,
+              help='Background for gpt-image models: auto, transparent, or opaque.')
+    @argument('--output_format', type=str, default=None,
+              help='Output format for gpt-image models: png, jpeg, or webp.')
+    @argument('--output_compression', type=int, default=None,
+              help='Compression level for jpeg or webp output (0-100).')
+    @argument('--moderation', type=str, default=None,
+              help='Moderation level for gpt-image models: auto or low.')
     @argument('--api_key', type=str, help="API key to access the LLM service.")
     @argument('--no_clipboard', action="store_true",
               help="Should the result be copied to the clipboard or not?")
     @cell_magic
-    def dalle(self, line, cell):
+    def openai_images(self, line, cell):
         """
-        OpenAI DALL-E magic for image generation by prompt.
+        OpenAI image generation magic for image generation by prompt.
         For more details see https://platform.openai.com/docs/api-reference/images .
         :return: Image.
         """
-        args = parse_argstring(self.dalle, line)
+        args = parse_argstring(self.openai_images, line)
         args = vars(args)
         args = {k: _unquote(v) for k, v in args.items()}
 
@@ -471,7 +482,8 @@ class Chatbook(Magics):
 
         # Model
         model = args.get("model", "dall-e-2")
-        if model not in ["dall-e-2", "dall-e-3"]:
+        is_gpt_image = isinstance(model, str) and model.startswith("gpt-image-")
+        if model not in ["dall-e-2", "dall-e-3"] and not is_gpt_image:
             print(f'Unknown model.')
 
         if model == "dall-e-3" and numberOfImages > 1:
@@ -479,8 +491,10 @@ class Chatbook(Magics):
             numberOfImages = 1
 
         # Size
-        size = args.get("size", "small")
-        if model == "dall-e-2":
+        size = args.get("size") or "small"
+        if is_gpt_image:
+            size = self.gptImageSizes.get(args.get("size"), args.get("size") or "auto")
+        elif model == "dall-e-2":
             if size not in self.dallE2Sizes:
                 expectedValues = list(self.dallE2Sizes.keys()) + [self.dallE2Sizes["small"],
                                                                   self.dallE2Sizes["medium"],
@@ -499,14 +513,29 @@ class Chatbook(Magics):
 
             size = self.dallE3Sizes.get(size, "1024x1024")
 
-        # Response format
+        # Response format. gpt-image models always return base64 image data.
         resFormat = args.get("response_format", "b64_json")
+        if is_gpt_image:
+            resFormat = "b64_json"
         if resFormat not in ["url", "b64_json"]:
             print(f'The response_format argument expects a value that is one of: "url", "b64_json". Using "b64_json".')
             resFormat = "url"
 
         # Call to OpenAI
-        if cell.strip().startswith("@") and os.path.exists(cell.strip()[1:]):
+        if is_gpt_image:
+            image_params = {
+                "prompt": cell,
+                "model": model,
+                "n": numberOfImages,
+                "size": size,
+            }
+            for key in ["quality", "background", "output_format", "moderation"]:
+                if args.get(key) is not None:
+                    image_params[key] = args[key]
+            if args.get("output_compression") is not None:
+                image_params["output_compression"] = args["output_compression"]
+            res = openai.images.generate(**image_params)
+        elif cell.strip().startswith("@") and os.path.exists(cell.strip()[1:]):
             fileName = cell.strip()[1:]
 
             maskFileName = args["mask"]
@@ -555,7 +584,8 @@ class Chatbook(Magics):
             for b in res.data:
                 d = b.b64_json
                 bImageData.append(d)
-                img = f"<img src=\"data:image/png;base64,{d}\" />"
+                output_format = args.get("output_format") or "png"
+                img = f"<img src=\"data:image/{output_format};base64,{d}\" />"
                 bImages.append(img)
 
             # Copy to clipboard
@@ -569,6 +599,9 @@ class Chatbook(Magics):
 
         # Result
         self.shell.run_cell(new_cell)
+
+    # Backwards-compatible name for existing notebooks.
+    dalle = openai_images
 
     # =====================================================
     # Gemini
@@ -806,7 +839,7 @@ class Chatbook(Magics):
             from xai_sdk import Client
         except ImportError as e:
             raise ImportError(
-                "The %%xai-images magic requires the 'xai-sdk' package. "
+                "The %%xai_images magic requires the 'xai-sdk' package. "
                 "Install it with: pip install xai-sdk"
             ) from e
 
