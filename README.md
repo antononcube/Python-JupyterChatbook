@@ -35,7 +35,7 @@ and ["google-genai"](https://pypi.org/project/google-genai/), [GAIp1].
 using the package ["pyperclip"](https://pypi.org/project/pyperclip/), [ASp1].
 
 **Remark:** The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken 
-from the Operating System (OS) environmental variables `OPENAI_API_KEY`, `GEMINI_API_KEY`, and `OLLAMA_API_KEY`. 
+from the Operating System (OS) environmental variables `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KEY`, and `XAI_API_KEY`. 
 (See below the setup section for LLM services access.)
 
 **Remark:** The Ollama magic cells also uses the environmental variables `OLLAMA_HOST` and `OLLAMA_MODEL`.
@@ -66,7 +66,7 @@ pip install JupyterChatbook
 ## Setup LLM services access
 
 The API keys for the LLM cells can be specified in the magic lines. If not specified then the API keys are taken f
-rom the Operating System (OS) environmental variables`OPENAI_API_KEY`, `GEMINI_API_KEY`, and `OLLAMA_API_KEY`. 
+rom the Operating System (OS) environmental variables`OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KEY`, and `XAI_API_KEY`. 
 (For example, set in the "~/.zshrc" file in macOS.)
 
 One way to set those environmental variables in a notebook session is to use the `%env` line magic. For example:
