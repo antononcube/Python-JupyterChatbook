@@ -17,14 +17,15 @@ The Chatbook extension provides the cell magics:
 
 - `%%chatgpt` (and the synonym `%%openai`)
 - `%%gemini`
+- `%%xai`
 - `%%ollama`
 - `%%dalle`
 - `%%chat`
 - `%%chat_meta`
 
-The first four are for "shallow" access of the corresponding LLM services.
-The 5th one is the most important -- allows contextual, multi-cell interactions with LLMs.
-The last one is for managing the chat objects created in a notebook session.
+The provider cells are for "shallow" access of the corresponding LLM services.
+The `%%chat` cell is the most important -- it allows contextual, multi-cell interactions with LLMs.
+The `%%chat_meta` cell manages the chat objects created in a notebook session.
 
 **Remark:** The chatbook LLM cells use the packages 
 ["openai"](https://pypi.org/project/openai/), [OAIp2], 
@@ -81,6 +82,7 @@ import os
 os.environ['OPENAI_API_KEY'] = '<YOUR OPENAI API KEY>'
 os.environ['GEMINI_API_KEY'] = '<YOUR GEMINI API KEY>'
 os.environ['OLLAMA_API_KEY'] = '<YOUR OLLAMA API KEY>'
+os.environ['XAI_API_KEY']    = '<YOUR XAI API KEY>'
 ```
 
 -------
@@ -380,6 +382,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
       - [X] `%%palm`
       - [X] `%%chat`
       - [X] `%%gemini`
+      - [X] `%%xai`
     - [ ] TODO Switching on/off copying to the clipboard
       - [X] DONE Per cell 
         - Controlled with the argument `--no_clipboard`.
@@ -393,6 +396,7 @@ the Raku package ["Jupyter::Chatbook"](https://github.com/antononcube/Raku-Jupyt
       - [X] `%%chat`
       - [X] `%%gemini`
       - [X] `%%ollama`
+      - [X] `%%xai`
       - [ ] `%%chat_meta`?
   - [X] DONE DALL-E image variations cell
     - Combined image variations and edits with `%%dalle`.

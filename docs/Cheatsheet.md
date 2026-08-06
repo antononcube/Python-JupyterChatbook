@@ -214,7 +214,7 @@ delete
 - Backend chosen with `--conf` (default: `ChatGPT`).
 
 
-### Direct provider cells (`%%chatgpt`, `%%openai`, `%%gemini`, `%%ollama`, `%%dalle`)
+### Direct provider cells (`%%chatgpt`, `%%openai`, `%%gemini`, `%%xai`, `%%ollama`, `%%dalle`)
 
 - Direct single-call access to provider APIs.
 - Useful for explicit provider/model control.
@@ -231,6 +231,11 @@ Write a regex for US ZIP+4.
 ```python
 %%gemini --model gemini-2.5-flash --format=markdown
 Explain async/await in Python using three point each with less than 10 words.
+```
+
+```python
+%%xai --model grok-3-mini --format markdown
+Explain this concept in three concise paragraphs.
 ```
 
 ```python
@@ -258,6 +263,7 @@ API keys can be passed inline (`--api_key`) or through environment variables.
 %env OPENAI_API_KEY=YOUR_OPENAI_KEY
 %env GEMINI_API_KEY=YOUR_GEMINI_KEY
 %env OLLAMA_API_KEY=YOUR_OLLAMA_KEY
+%env XAI_API_KEY=YOUR_XAI_KEY
 ```
 
 or:
@@ -267,6 +273,7 @@ import os
 os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_KEY"
 os.environ["GEMINI_API_KEY"] = "YOUR_GEMINI_KEY"
 os.environ["OLLAMA_API_KEY"] = "YOUR_OLLAMA_KEY"
+os.environ["XAI_API_KEY"] = "YOUR_XAI_KEY"
 ```
 
 Ollama-specific defaults:
