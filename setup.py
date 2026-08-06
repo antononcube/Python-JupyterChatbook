@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="JupyterChatbook",
-    version="0.1.5",
+    version="0.1.6",
     author="Anton Antonov",
     author_email="antononcube@posteo.net",
     description="Custom Jupyter magics for interacting with LLMs.",
@@ -17,6 +17,7 @@ setuptools.setup(
                       "IPython>=8.15.0",
                       "pyperclip>=1.8.2",
                       "google-genai>=0.8.0",
+                      "xai-sdk>=1.0.0",
                       "openai>=0.28.1"
                       ],
     classifiers=[
